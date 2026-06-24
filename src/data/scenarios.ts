@@ -43,6 +43,7 @@ export const SCENARIOS: Scenario[] = [
     title: 'Pediatric Septic Shock',
     description: 'Infant with fever, lethargy, and poor perfusion.',
     difficulty: 'HARD', protocol: 'PALS',
+    patientWeight: 8,
     initialState: generateInitialState('STACH', 'ALTERED', 'CLEAR', 'LABORED', 'PULSE', 180, 40)
   },
   // --- NRP (Neonatal) ---
@@ -51,6 +52,7 @@ export const SCENARIOS: Scenario[] = [
     title: 'Neonatal Apnea',
     description: 'Term baby, limp, blue, not breathing at birth.',
     difficulty: 'HARD', protocol: 'NRP',
+    patientWeight: 3.5,
     initialState: generateInitialState('SBAD', 'UNCONSCIOUS', 'CLEAR', 'APNEIC', 'PULSE', 40, 30)
   },
   // ... This structure allows for 50+ scenarios by continuing the pattern

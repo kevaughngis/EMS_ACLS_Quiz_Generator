@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Plane, Grid, Cylinder, Box, Html } from '@react-three/drei';
+import { Plane, Grid, Cylinder, Box, Html, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
+import { useStore } from '../store/useStore';
 
 interface PatientModelProps {
   onAssess: (part: string) => void;
@@ -95,19 +96,56 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
   );
 };
 
+const TeamMemberModel = ({ position, name, role, color }: any) => (
+    <group position={position}>
+        <Cylinder args={[0.3, 0.4, 1.7]} position={[0, 0.85, 0]}>
+            <meshStandardMaterial color={color} />
+        </Cylinder>
+        <Sphere args={[0.25]} position={[0, 1.9, 0]}>
+            <meshStandardMaterial color="#f3c1ad" />
+        </Sphere>
+        <Html position={[0, 2.3, 0]} center>
+            <div className="bg-black/80 px-2 py-0.5 rounded border border-white/20 text-[8px] font-black text-white whitespace-nowrap uppercase tracking-widest">
+                {role}: {name}
+            </div>
+        </Html>
+    </group>
+);
+
 export const MedicalRoom = ({ onEquipmentClick }: { onEquipmentClick: (type: string) => void }) => {
+  const { environment, team } = useStore();
+
   return (
     <>
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={environment === 'AMBULANCE' ? 0.2 : 0.3} />
       <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow shadow-mapSize={[2048, 2048]} />
-      <pointLight position={[-3, 2, -2]} color="#0ea5e9" intensity={2} />
+      <pointLight position={[-3, 2, -2]} color={environment === 'ER' ? "#ff3d00" : "#0ea5e9"} intensity={2} />
 
       <group position={[0, -0.01, 0]}>
         <Plane args={[100, 100]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <meshStandardMaterial color="#020617" roughness={0.1} metalness={0.8} />
+          <meshStandardMaterial color={environment === 'AMBULANCE' ? "#1e1b4b" : "#020617"} roughness={0.1} metalness={0.8} />
         </Plane>
-        <Grid infiniteGrid fadeDistance={40} cellColor="#1e293b" sectionColor="#334155" />
+        <Grid infiniteGrid fadeDistance={40} cellColor="#1e293b" sectionColor={environment === 'ER' ? "#dc2626" : "#334155"} />
       </group>
+
+      {/* Team Members */}
+      <TeamMemberModel position={[-1.5, 0, 1.5]} role="NURSE" name={team[0].name} color="#1e40af" />
+      <TeamMemberModel position={[1.5, 0, 1.5]} role="RT" name={team[1].name} color="#15803d" />
+
+      {/* Ambulance Walls */}
+      {environment === 'AMBULANCE' && (
+        <group>
+            <Box args={[6, 3, 0.2]} position={[0, 1.5, -3]}>
+                <meshStandardMaterial color="#334155" />
+            </Box>
+            <Box args={[0.2, 3, 8]} position={[-3, 1.5, 0]}>
+                <meshStandardMaterial color="#334155" />
+            </Box>
+            <Box args={[0.2, 3, 8]} position={[3, 1.5, 0]}>
+                <meshStandardMaterial color="#334155" />
+            </Box>
+        </group>
+      )}
 
       {/* Hospital Bed - More High Fidelity */}
       <group position={[0, 0, -0.5]}>

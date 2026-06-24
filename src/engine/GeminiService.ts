@@ -29,3 +29,27 @@ export async function getScenarioFeedback(protocol: string, logs: string[]) {
     return "The AI preceptor is currently unavailable. Please review the AHA guidelines manually.";
   }
 }
+
+export async function getLiveCoachingHint(protocol: string, logs: string[], vitals: any) {
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+      const prompt = `
+        You are an expert medical preceptor watching a student perform a simulation.
+        PROTOCOL: ${protocol}
+        CURRENT VITALS: HR ${vitals.hr}, SpO2 ${vitals.spo2}, MAP ${vitals.map}
+        LOGS SO FAR:
+        ${logs.slice(-5).join('\n')}
+
+        Provide ONE short, urgent hint (max 15 words) for the student.
+        Focus on the immediate next priority in the algorithm.
+        Example: "Check for a pulse and start high-quality CPR immediately."
+      `;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      return null;
+    }
+  }

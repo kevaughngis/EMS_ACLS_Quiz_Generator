@@ -54,4 +54,28 @@ export interface Scenario {
   initialState: PatientState;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   protocol: 'ACLS' | 'BLS' | 'PALS' | 'NRP';
+  patientWeight?: number; // Added for pharmacy math
+}
+
+export interface TeamMember {
+  id: string;
+  role: 'NURSE' | 'RT' | 'MEDIC' | 'INTERN';
+  name: string;
+  status: 'IDLE' | 'BUSY' | 'DONE';
+  currentTask?: string;
+}
+
+export type EnvironmentType = 'HOSPITAL' | 'AMBULANCE' | 'ER';
+
+export interface UserProgress {
+  xp: number;
+  level: number;
+  mastery: Record<string, number>; // protocol -> mastery percentage
+}
+
+export interface CalculationChallenge {
+  drug: string;
+  correctDose: number;
+  unit: string;
+  options: number[];
 }
