@@ -1,0 +1,38 @@
+{
+  "name": "ems-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@react-three/drei": "^9.121.4",
+    "@react-three/fiber": "^8.17.14",
+    "three": "^0.173.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.3",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.474.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.1"
+  },
+  "devDependencies": {
+    "vite": "^6.1.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.7.3",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/three": "^0.173.0",
+    "@types/node": "^22.13.1",
+    "tailwindcss": "^3.4.17",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "oxlint": "^0.15.10"
+  }
+}
