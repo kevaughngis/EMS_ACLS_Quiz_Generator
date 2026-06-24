@@ -3,7 +3,9 @@ import './index.css'
 
 function App() {
   return (
-    <HUD />
+    <div className="bg-medical-dark min-h-screen">
+      <HUD />
+    </div>
   )
 }
 

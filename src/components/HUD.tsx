@@ -60,6 +60,13 @@ const HUD = () => {
           color="border-medical-green hover:bg-medical-green/10"
           accent="bg-medical-green"
         />
+        <ProtocolButton
+          onClick={() => useStore.getState().startScenario('nrp-apnea-1')}
+          title="Neonatal Resuscitation"
+          subtitle="NRP Algorithm • Birth Apnea"
+          color="border-medical-yellow hover:bg-medical-yellow/10"
+          accent="bg-medical-yellow"
+        />
       </motion.div>
     </div>
   );

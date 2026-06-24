@@ -3,27 +3,40 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  --medical-cyan: #00f2ff;
+  --medical-red: #ff1744;
+  --medical-dark: #0a192f;
 }
 
 body {
   margin: 0;
-  background-color: #0a192f;
+  background: var(--medical-dark);
   color: white;
+  font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.crt-effect {
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.01));
-  background-size: 100% 4px, 3px 100%;
-}
-
+/* CRT Scanline Effect */
 @keyframes scanline {
-    from { top: -100%; }
-    to { top: 100%; }
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
 }
 
 .animate-scanline {
-    animation: scanline 8s linear infinite;
+  animation: scanline 8s linear infinite;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
 }
