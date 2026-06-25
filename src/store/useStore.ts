@@ -17,8 +17,13 @@ interface AppState {
   team: TeamMember[];
   progress: UserProgress;
   activeChallenge: CalculationChallenge | null;
-  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER';
+  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS';
   hints: string[];
+
+  // Defib State
+  defibEnergy: number;
+  defibCharge: number; // 0 to 100
+  isSync: boolean;
 
   startScenario: (id: string) => void;
   applyAction: (action: string) => void;
@@ -29,7 +34,7 @@ interface AppState {
   setEnvironment: (env: EnvironmentType) => void;
   assignTeamTask: (memberId: string, task: string) => void;
   solveChallenge: (answer: number) => void;
-  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER') => void;
+  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS') => void;
   addXP: (amount: number) => void;
   addHint: (hint: string) => void;
 }
@@ -53,6 +58,10 @@ export const useStore = create<AppState>()(
   activeChallenge: null,
   activeProcedure: 'NONE',
   hints: [],
+
+  defibEnergy: 200,
+  defibCharge: 0,
+  isSync: false,
 
   setEnvironment: (environment) => set({ environment }),
 

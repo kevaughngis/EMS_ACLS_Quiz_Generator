@@ -9,8 +9,12 @@ import HandoverReport from './HandoverReport';
 import AnatomyLesson from './AnatomyLesson';
 import { TwelveLeadECG } from './TwelveLeadECG';
 import { DiagnosticsCenter } from './DiagnosticsCenter';
+import { DefibInterface } from './DefibInterface';
+import { CommunicationHub } from './CommunicationHub';
+import { EquipmentBag } from './EquipmentBag';
+import { VitalsTrends } from './VitalsTrends';
 import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
-import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope } from 'lucide-react';
+import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -61,6 +65,28 @@ const HUD = () => {
     }, 100);
     return () => clearInterval(interval);
   }, [tick, patientState]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (!patientState) return;
+
+        // Don't trigger shortcuts if user is typing in an input (e.g., pharmacy math)
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) return;
+
+        switch (e.code) {
+            case 'Space':
+                e.preventDefault();
+                applyAction('CPR_COMPRESSION');
+                break;
+            case 'KeyR':
+                applyAction('RHYTHM_CHECK');
+                break;
+        }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [patientState, applyAction]);
 
   if (!patientState) return (
     <div className="flex items-center justify-center h-screen bg-medical-dark overflow-hidden">
@@ -207,6 +233,30 @@ const HUD = () => {
             DIAGS
           </HUDButton>
 
+          <HUDButton
+            onClick={() => setProcedure('VITALS_TRENDS')}
+            variant="primary"
+            icon={<TrendingUp size={16} />}
+          >
+            TRENDS
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('EQUIPMENT')}
+            variant="primary"
+            icon={<Briefcase size={16} />}
+          >
+            BAG
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('HISTORY')}
+            variant="primary"
+            icon={<MessageCircle size={16} />}
+          >
+            HISTORY
+          </HUDButton>
+
           <div className="bg-medical-dark/80 backdrop-blur-md px-6 py-2 rounded-xl border border-white/10 shadow-xl flex flex-col items-end min-w-[120px]">
             <div className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Elapsed Time</div>
             <div className="text-2xl font-mono font-black text-medical-yellow tabular-nums">02:45</div>
@@ -315,7 +365,7 @@ const HUD = () => {
             <div className="grid grid-cols-2 gap-3">
                 <ActionButton label="Epi 1mg" onClick={() => applyAction('EPINEPHRINE')} color="bg-medical-red" />
                 <ActionButton label="Amio 300mg" onClick={() => applyAction('AMIODARONE')} color="bg-medical-blue" />
-                <ActionButton label="Defib 200J" onClick={() => applyAction('DEFIBRILLATION')} color="bg-medical-yellow" icon={<Zap size={16}/>} />
+                <ActionButton label="Defibrillator" onClick={() => setProcedure('DEFIB_INTERFACE')} color="bg-medical-yellow" icon={<Zap size={16}/>} />
                 <ActionButton label="Start CPR" onClick={() => applyAction('CPR_COMPRESSION')} color="bg-medical-green" icon={<Heart size={16}/>} />
             </div>
         </div>
@@ -370,6 +420,10 @@ const HUD = () => {
 
       {showTwelveLead && <TwelveLeadECG onClose={() => setShowTwelveLead(false)} />}
       {showDiagnostics && <DiagnosticsCenter onClose={() => setShowDiagnostics(false)} />}
+      {activeProcedure === 'DEFIB_INTERFACE' && <DefibInterface onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'HISTORY' && <CommunicationHub onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'EQUIPMENT' && <EquipmentBag onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'VITALS_TRENDS' && <VitalsTrends onClose={() => setProcedure('NONE')} />}
 
       {/* Bottom HUD - Interaction Instructions */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-8 z-40">
