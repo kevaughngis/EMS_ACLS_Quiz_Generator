@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { motion } from 'framer-motion';
-import { Briefcase, Zap, Wind, Syringe, Box, Activity } from 'lucide-react';
+import { Briefcase, Zap, Wind, Syringe, Box, Activity, Ruler } from 'lucide-react';
 
 export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { applyAction, setProcedure } = useStore();
@@ -26,6 +26,9 @@ export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => 
            <TabButton active={category === 'CIRCULATION'} onClick={() => setCategory('CIRCULATION')} icon={<Zap size={16}/>} label="Circulation" />
            <TabButton active={category === 'DRUGS'} onClick={() => setProcedure('PHARMACY')} icon={<Syringe size={16}/>} label="Pharmacy" />
            <TabButton active={category === 'TRAUMA'} onClick={() => setCategory('TRAUMA')} icon={<Activity size={16}/>} label="Trauma" />
+           {useStore.getState().scenario?.protocol === 'PALS' && (
+             <TabButton active={false} onClick={() => setProcedure('BROSELOW')} icon={<Ruler size={16}/>} label="Broselow" />
+           )}
         </div>
 
         {/* Grid */}

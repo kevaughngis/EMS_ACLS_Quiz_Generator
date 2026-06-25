@@ -21,7 +21,12 @@ import { POCUSInterface } from './POCUSInterface';
 import { ConsultationHub } from './ConsultationHub';
 import { ProtocolTablet } from './ProtocolTablet';
 import { IVPumpTitration } from './IVPumpTitration';
+import { NeuroAssessment } from './NeuroAssessment';
+import { ABGLab } from './ABGLab';
+import { BroselowToolkit } from './BroselowToolkit';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ScenarioSandbox } from './ScenarioSandbox';
+import { CPRQualityGauge } from './CPRQualityGauge';
 import { ProcedureMinigame } from './ProcedureMinigame';
 import type { MinigameType } from './ProcedureMinigame';
 import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
@@ -249,6 +254,14 @@ const HUD = () => {
         </div>
 
         <div className="flex gap-3 items-center">
+          <HUDButton
+            onClick={() => setProcedure('ANALYTICS')}
+            variant="success"
+            icon={<TrendingUp size={16} />}
+          >
+            REVIEW
+          </HUDButton>
+
           <HUDButton
             onClick={showAIReview}
             isLoading={loadingAI}
@@ -529,6 +542,12 @@ const HUD = () => {
       {activeProcedure === 'CONSULT' && <ConsultationHub onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'PROTOCOL_TABLET' && <ProtocolTablet onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'IV_TITRATION' && <IVPumpTitration onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'NEURO_EXAM' && <NeuroAssessment onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'ABG_LAB' && <ABGLab onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'BROSELOW' && <BroselowToolkit onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'ANALYTICS' && <AnalyticsDashboard onClose={() => setProcedure('NONE')} />}
+
+      <CPRQualityGauge />
 
       {activeMinigame && (
         <ProcedureMinigame

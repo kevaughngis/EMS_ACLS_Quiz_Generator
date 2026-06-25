@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Wind, Eye, MousePointer2, Volume2 } from 'lucide-react';
+import { Activity, Wind, Eye, MousePointer2, Volume2, Brain } from 'lucide-react';
 import { soundEngine } from '../engine/SoundEngine';
 
 export const PhysicalExam: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { patientState, activePatientIndex, secondaryPatientState } = useStore();
+  const { patientState, activePatientIndex, secondaryPatientState, setProcedure } = useStore();
   const [activeTool, setActiveTool] = useState<'STETHOSCOPE' | 'LIGHT' | 'PULSE'>('STETHOSCOPE');
 
   const currentPatient = activePatientIndex === 0 ? patientState : secondaryPatientState;
@@ -30,6 +30,7 @@ export const PhysicalExam: React.FC<{ onClose: () => void }> = ({ onClose }) => 
              <ToolBtn active={activeTool === 'STETHOSCOPE'} onClick={() => setActiveTool('STETHOSCOPE')} icon={<Volume2 />} label="Auscultation" />
              <ToolBtn active={activeTool === 'LIGHT'} onClick={() => setActiveTool('LIGHT')} icon={<Eye />} label="Pupils" />
              <ToolBtn active={activeTool === 'PULSE'} onClick={() => setActiveTool('PULSE')} icon={<Activity />} label="Palpation" />
+             <ToolBtn active={false} onClick={() => setProcedure('NEURO_EXAM')} icon={<Brain />} label="Neuro" />
           </div>
 
           {/* Main Workspace */}

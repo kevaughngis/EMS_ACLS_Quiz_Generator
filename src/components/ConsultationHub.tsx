@@ -31,6 +31,7 @@ export const ConsultationHub: React.FC<{ onClose: () => void }> = ({ onClose }) 
     const response = await getClinicalChatResponse(`Expert ${specialist?.name}`, userMsg, context);
     setIsCalling(false);
     setChatHistory(prev => [...prev, { role: specialist?.name || 'Specialist', text: response }]);
+    useStore.getState().applyAction(`CONSULTED_${specialist?.id.toUpperCase()}`);
   };
 
   return (
