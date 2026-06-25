@@ -24,7 +24,7 @@ export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         <div className="flex bg-black/20 p-2 mx-10 mt-6 rounded-2xl gap-2">
            <TabButton active={category === 'AIRWAY'} onClick={() => setCategory('AIRWAY')} icon={<Wind size={16}/>} label="Airway" />
            <TabButton active={category === 'CIRCULATION'} onClick={() => setCategory('CIRCULATION')} icon={<Zap size={16}/>} label="Circulation" />
-           <TabButton active={category === 'DRUGS'} onClick={() => setCategory('DRUGS')} icon={<Syringe size={16}/>} label="Pharmacy" />
+           <TabButton active={category === 'DRUGS'} onClick={() => setProcedure('PHARMACY')} icon={<Syringe size={16}/>} label="Pharmacy" />
            <TabButton active={category === 'TRAUMA'} onClick={() => setCategory('TRAUMA')} icon={<Activity size={16}/>} label="Trauma" />
         </div>
 

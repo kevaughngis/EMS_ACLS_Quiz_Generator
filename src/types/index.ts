@@ -53,6 +53,19 @@ export interface PatientState {
   airway: 'CLEAR' | 'OBSTRUCTED' | 'INTUBATED';
   breathing: 'NORMAL' | 'LABORED' | 'APNEIC';
   circulation: 'PULSE' | 'PULSELESS';
+  physicalExam: {
+    pupils: 'PERRL' | 'FIXED_DILATED' | 'PINPOINT';
+    capRefill: number; // seconds
+    lungSounds: 'CLEAR' | 'WHEEZING' | 'CRACKLES' | 'DIMINISHED' | 'ABSENT';
+    heartSounds: 'NORMAL' | 'MURMUR' | 'MUFFLED' | 'GALLOP';
+  };
+  ventilator?: {
+    mode: 'AC' | 'SIMV' | 'PS';
+    rate: number;
+    peep: number;
+    fio2: number;
+    tidalVolume: number;
+  };
 }
 
 export interface DiagnosticData {
