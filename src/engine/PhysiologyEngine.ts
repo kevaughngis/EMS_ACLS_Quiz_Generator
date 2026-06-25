@@ -8,7 +8,10 @@ export class PhysiologyEngine {
   private ph: number = 7.4;
   private potassium: number = 4.0;
   private volume: number = 5.0; // Liters
+  private altitude: number = 0; // Feet
   private cumulativeCPR: number = 0;
+  private uterineTone: number = 100; // 0 to 100
+  private seizureActivity: number = 0; // 0 to 1
 
   constructor(initialState: PatientState) {
     this.state = JSON.parse(JSON.stringify(initialState));
@@ -35,6 +38,17 @@ export class PhysiologyEngine {
   private simulate(dt: number) {
     const { vitals, rhythm } = this.state;
 
+    // Maternal High-Stakes Logic
+    if (rhythm === 'PPH') {
+        this.volume -= dt * 0.05 * (1 - this.uterineTone/100);
+        if (this.uterineTone < 30) this.volume -= dt * 0.1; // Gush
+    }
+    if (rhythm === 'ECLAMPSIA') {
+        this.seizureActivity = Math.min(1, this.seizureActivity + dt * 0.2);
+        this.oxygen -= dt * 3.0 * this.seizureActivity;
+        vitals.hr += dt * 20 * this.seizureActivity;
+    }
+
     // 1. Vasoactive/Inotropic Influences
     let alpha1 = 0, beta1 = 0, beta2 = 0;
     this.drugs.forEach(d => {
@@ -55,6 +69,10 @@ export class PhysiologyEngine {
     const targetMap = (vitals.co * svr) / 80;
     vitals.map += (targetMap - vitals.map) * dt * 0.2;
 
+    // Flight Physiology (Boyle's Law & Dalton's Law mock)
+    const pressureRatio = Math.max(0.5, 1 - (this.altitude / 50000));
+    const fio2Base = 21 * pressureRatio;
+
     // 3. Respiratory & Metabolic
     const isArrest = ['VF', 'ASYSTOLE', 'PEA'].includes(rhythm);
     if (isArrest && this.cumulativeCPR < 0.1) {
@@ -62,8 +80,14 @@ export class PhysiologyEngine {
       this.ph -= dt * 0.02;
     } else {
       const vent = (vitals.rr / 12) * (this.state.airway === 'CLEAR' ? 1 : 0.1);
-      this.oxygen += (100 - this.oxygen) * dt * 0.3 * (vent + (isArrest ? 0.2 : 0));
+      const oxyTarget = Math.min(100, (fio2Base / 21) * 100);
+      this.oxygen += (oxyTarget - this.oxygen) * dt * 0.3 * (vent + (isArrest ? 0.2 : 0));
       this.ph += (7.4 - this.ph) * dt * 0.1 * vent;
+    }
+
+    // Tension Pneumothorax Expansion at Altitude
+    if (this.state.breathing === 'PNEUMOTHORAX' && this.altitude > 5000) {
+        this.oxygen -= dt * (this.altitude / 10000); // Gas expansion restricts lung further
     }
 
     this.cumulativeCPR = Math.max(0, this.cumulativeCPR - dt * 0.5);
@@ -88,6 +112,10 @@ export class PhysiologyEngine {
         if (['I', 'aVL'].includes(l)) st = -1.5; // Reciprocal
       } else if (rhythm === 'HYPERKALEMIA') {
         st = 0.5; // Mild elevation or peaked T (simulated as slight ST elevation for now)
+      } else if (rhythm === 'WELLENS') {
+        if (['V2', 'V3'].includes(l)) st = -2.0; // Biphasic or deep inverted T waves
+      } else if (rhythm === 'DE_WINTER') {
+        if (['V1', 'V2', 'V3', 'V4'].includes(l)) st = -1.0; // Upsloping ST depression with tall, symmetric T waves
       }
 
       return { lead: l, stSegment: st };
@@ -129,6 +157,21 @@ export class PhysiologyEngine {
       case 'SUCTION': if(this.state.airway === 'OBSTRUCTED') this.state.airway = 'CLEAR'; break;
       case 'NEEDLE_DECOMPRESSION_SUCCESS': this.state.breathing = 'NORMAL'; this.oxygen = Math.min(100, this.oxygen + 20); break;
       case 'TOURNIQUET_SUCCESS': this.volume = Math.max(2.0, this.volume + 0.1); break; // Stop volume loss
+      case 'FUNDAL_MASSAGE': this.uterineTone = Math.min(100, this.uterineTone + 15); break;
+      case 'MAGNESIUM_SULFATE': this.seizureActivity = Math.max(0, this.seizureActivity - 0.4); break;
+      case 'OXYTOCIN': this.uterineTone = Math.min(100, this.uterineTone + 40); break;
+      case 'TV_PACING_START': this.state.rhythm = 'PACED'; break;
+      case 'PERICARDIOCENTESIS_DRAIN':
+        if (this.state.rhythm === 'TAMPONADE') {
+            this.volume = Math.min(5.0, this.volume + 0.1);
+            this.state.vitals.hr -= 5;
+        }
+        break;
+      case 'WOUND_PACKING': this.volume += 0.05; break;
+      case 'CAT_TOURNIQUET': this.volume += 0.1; break;
+      case 'PELVIC_SLING': this.volume += 0.15; break;
+      case 'ASCEND': this.altitude = Math.min(30000, this.altitude + 1000); break;
+      case 'DESCEND': this.altitude = Math.max(0, this.altitude - 1000); break;
     }
   }
 
