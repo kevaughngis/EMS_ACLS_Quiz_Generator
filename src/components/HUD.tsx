@@ -35,10 +35,15 @@ import { ScenarioSandbox } from './ScenarioSandbox';
 import { CPRQualityGauge } from './CPRQualityGauge';
 import { CrisisTroubleshooter } from './CrisisTroubleshooter';
 import { AlgorithmProjector } from './AlgorithmProjector';
+import { MaternalSuite } from './MaternalSuite';
+import { TCCCSuite } from './TCCCSuite';
+import { ToxidromeLab } from './ToxidromeLab';
+import { FlightDeck } from './FlightDeck';
+import { CardiologySuite } from './CardiologySuite';
 import { ProcedureMinigame } from './ProcedureMinigame';
 import type { MinigameType } from './ProcedureMinigame';
 import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
-import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp, Trophy, FileText, Shield, Database, Phone } from 'lucide-react';
+import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp, Trophy, FileText, Shield, Database, Phone, Baby, Crosshair, Plane } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -402,6 +407,46 @@ const HUD = () => {
           </HUDButton>
 
           <HUDButton
+            onClick={() => setProcedure('MATERNAL_SUITE')}
+            variant="primary"
+            icon={<Baby size={16} />}
+          >
+            MATERNAL
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('TCCC_SUITE')}
+            variant="primary"
+            icon={<Crosshair size={16} />}
+          >
+            TCCC
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('TOXIDROME_LAB')}
+            variant="primary"
+            icon={<Microscope size={16} />}
+          >
+            TOX
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('FLIGHT_DECK')}
+            variant="primary"
+            icon={<Plane size={16} />}
+          >
+            FLIGHT
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('CARDIOLOGY_SUITE')}
+            variant="primary"
+            icon={<Heart size={16} />}
+          >
+            CARDIOLOGY
+          </HUDButton>
+
+          <HUDButton
             onClick={() => setProcedure('CAREER')}
             variant="success"
             icon={<Trophy size={16} />}
@@ -593,6 +638,11 @@ const HUD = () => {
       {activeProcedure === 'TRAUMA_SUITE' && <TraumaSuite onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'VASCULAR_ACCESS' && <VascularAccess onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'RADIOLOGY' && <RadiologySuite onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'MATERNAL_SUITE' && <MaternalSuite onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'TCCC_SUITE' && <TCCCSuite onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'TOXIDROME_LAB' && <ToxidromeLab onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'FLIGHT_DECK' && <FlightDeck onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'CARDIOLOGY_SUITE' && <CardiologySuite onClose={() => setProcedure('NONE')} />}
 
       <CPRQualityGauge />
 

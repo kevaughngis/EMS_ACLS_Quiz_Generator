@@ -20,7 +20,7 @@ interface AppState {
   team: TeamMember[];
   progress: UserProgress;
   activeChallenge: CalculationChallenge | null;
-  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW' | 'LEADERSHIP' | 'PCR_CHART' | 'TRAUMA_SUITE' | 'VASCULAR_ACCESS' | 'RADIOLOGY' | 'ALGORITHM_AR' | 'CRISIS_FIX';
+  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW' | 'LEADERSHIP' | 'PCR_CHART' | 'TRAUMA_SUITE' | 'VASCULAR_ACCESS' | 'RADIOLOGY' | 'ALGORITHM_AR' | 'CRISIS_FIX' | 'MATERNAL_SUITE' | 'TCCC_SUITE' | 'TOXIDROME_LAB' | 'FLIGHT_DECK' | 'CARDIOLOGY_SUITE';
   hints: string[];
   activeCrisis: { id: string, label: string, description: string } | null;
 
@@ -40,7 +40,7 @@ interface AppState {
   setEnvironment: (env: EnvironmentType) => void;
   assignTeamTask: (memberId: string, task: string) => void;
   solveChallenge: (answer: number) => void;
-  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW' | 'LEADERSHIP' | 'PCR_CHART' | 'TRAUMA_SUITE' | 'VASCULAR_ACCESS' | 'RADIOLOGY' | 'ALGORITHM_AR' | 'CRISIS_FIX') => void;
+  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW' | 'LEADERSHIP' | 'PCR_CHART' | 'TRAUMA_SUITE' | 'VASCULAR_ACCESS' | 'RADIOLOGY' | 'ALGORITHM_AR' | 'CRISIS_FIX' | 'MATERNAL_SUITE' | 'TCCC_SUITE' | 'TOXIDROME_LAB' | 'FLIGHT_DECK' | 'CARDIOLOGY_SUITE') => void;
   addXP: (amount: number) => void;
   addHint: (hint: string) => void;
   setStore: (partial: Partial<AppState>) => void;
