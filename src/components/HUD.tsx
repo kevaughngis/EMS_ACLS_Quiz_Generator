@@ -14,6 +14,10 @@ import { CommunicationHub } from './CommunicationHub';
 import { EquipmentBag } from './EquipmentBag';
 import { VitalsTrends } from './VitalsTrends';
 import { CareerDashboard } from './CareerDashboard';
+import { PhysicalExam } from './PhysicalExam';
+import { VentilatorInterface } from './VentilatorInterface';
+import { PharmacyCabinet } from './PharmacyCabinet';
+import { ScenarioSandbox } from './ScenarioSandbox';
 import { ProcedureMinigame } from './ProcedureMinigame';
 import type { MinigameType } from './ProcedureMinigame';
 import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
@@ -35,6 +39,7 @@ const HUD = () => {
   const [loadingAI, setLoadingAI] = useState(false);
   const [showTwelveLead, setShowTwelveLead] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [showSandbox, setShowSandbox] = useState(false);
   const [activeMinigame, setActiveMinigame] = useState<MinigameType | null>(null);
 
   const lastBeepTime = useRef(0);
@@ -99,6 +104,7 @@ const HUD = () => {
 
   if (!patientState) return (
     <div className="flex items-center justify-center h-screen bg-medical-dark overflow-hidden">
+      {showSandbox && <ScenarioSandbox onClose={() => setShowSandbox(false)} />}
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#00e5ff_1px,transparent_1px)] [background-size:20px_20px]"></div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -111,6 +117,12 @@ const HUD = () => {
                 Advanced <span className="text-medical-cyan">Clinical</span> Tutor
             </h1>
             <div className="h-1 w-24 bg-medical-cyan mt-2 rounded-full shadow-[0_0_15px_rgba(0,229,255,0.5)]"></div>
+            <button
+              onClick={() => setShowSandbox(true)}
+              className="mt-4 text-[10px] font-black text-medical-cyan border border-medical-cyan/30 px-4 py-1 rounded-full hover:bg-medical-cyan/10 transition-colors tracking-widest"
+            >
+              OPEN SANDBOX DESIGNER
+            </button>
         </div>
 
         <ProtocolButton
@@ -146,7 +158,9 @@ const HUD = () => {
   );
 
   const handleAssess = (part: string) => {
-    applyAction(`ASSESS_${part}`);
+    if (part === 'DEFIBRILLATOR') setProcedure('DEFIB_INTERFACE');
+    else if (part === 'VENTILATOR') setProcedure('VENTILATOR');
+    else applyAction(`ASSESS_${part}`);
   };
 
   const currentPatient = activePatientIndex === 0 ? patientState : secondaryPatientState;
@@ -293,6 +307,14 @@ const HUD = () => {
             icon={<MessageCircle size={16} />}
           >
             HISTORY
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('PHYSICAL_EXAM')}
+            variant="primary"
+            icon={<Activity size={16} />}
+          >
+            EXAM
           </HUDButton>
 
           <HUDButton
@@ -471,6 +493,9 @@ const HUD = () => {
       {activeProcedure === 'EQUIPMENT' && <EquipmentBag onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'VITALS_TRENDS' && <VitalsTrends onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'CAREER' && <CareerDashboard onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'PHYSICAL_EXAM' && <PhysicalExam onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'VENTILATOR' && <VentilatorInterface onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'PHARMACY' && <PharmacyCabinet onClose={() => setProcedure('NONE')} />}
 
       {activeMinigame && (
         <ProcedureMinigame

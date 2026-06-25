@@ -20,7 +20,7 @@ interface AppState {
   team: TeamMember[];
   progress: UserProgress;
   activeChallenge: CalculationChallenge | null;
-  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER';
+  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY';
   hints: string[];
 
   // Defib State
@@ -39,7 +39,7 @@ interface AppState {
   setEnvironment: (env: EnvironmentType) => void;
   assignTeamTask: (memberId: string, task: string) => void;
   solveChallenge: (answer: number) => void;
-  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER') => void;
+  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY') => void;
   addXP: (amount: number) => void;
   addHint: (hint: string) => void;
 }
@@ -103,9 +103,17 @@ export const useStore = create<AppState>()(
   addHint: (hint) => set(state => ({ hints: [hint, ...state.hints].slice(0, 5) })),
 
   startScenario: (id: string) => {
-    const scenario = SCENARIOS.find(s => s.id === id);
-    if (scenario) {
-      const engine = new PhysiologyEngine(scenario.initialState);
+    let scenario = SCENARIOS.find(s => s.id === id);
+    let initialState = scenario?.initialState;
+
+    // Sandbox interception
+    if ((window as any).customSandboxState) {
+        initialState = (window as any).customSandboxState;
+        (window as any).customSandboxState = null;
+    }
+
+    if (scenario && initialState) {
+      const engine = new PhysiologyEngine(initialState);
       const secondaryEngine = scenario.difficulty === 'HARD' ? new PhysiologyEngine({ ...scenario.initialState, rhythm: 'SBAD' }) : null;
       set({
         scenario,

@@ -55,13 +55,52 @@ export const SCENARIOS: Scenario[] = [
     patientWeight: 3.5,
     initialState: generateInitialState('SBAD', 'UNCONSCIOUS', 'CLEAR', 'APNEIC', 'PULSE', 40, 30)
   },
+  // --- Stroke & Neurology ---
+  {
+    id: 'stroke-nihss-1',
+    title: 'Acute Ischemic Stroke',
+    description: '72-year-old female with sudden right-sided weakness and facial droop.',
+    difficulty: 'MEDIUM', protocol: 'ACLS',
+    initialState: {
+        ...generateInitialState('SINUS', 'AWAKE', 'CLEAR', 'NORMAL', 'PULSE', 88, 110),
+        physicalExam: { pupils: 'PERRL', capRefill: 2, lungSounds: 'CLEAR', heartSounds: 'NORMAL' }
+    }
+  },
+  // --- Toxicology ---
+  {
+    id: 'tox-opioid-1',
+    title: 'Opioid Overdose',
+    description: 'Unresponsive male found in alley. Pinpoint pupils, slow respirations.',
+    difficulty: 'EASY', protocol: 'BLS',
+    initialState: {
+        ...generateInitialState('SBAD', 'UNCONSCIOUS', 'OBSTRUCTED', 'LABORED', 'PULSE', 42, 50),
+        physicalExam: { pupils: 'PINPOINT', capRefill: 3, lungSounds: 'DIMINISHED', heartSounds: 'NORMAL' }
+    }
+  },
+  // --- Maternal / OB ---
+  {
+    id: 'ob-eclampsia-1',
+    title: 'Postpartum Eclampsia',
+    description: 'New mother having a generalized tonic-clonic seizure. High BP.',
+    difficulty: 'HARD', protocol: 'ACLS',
+    initialState: {
+        ...generateInitialState('STACH', 'ALTERED', 'OBSTRUCTED', 'LABORED', 'PULSE', 130, 145),
+        physicalExam: { pupils: 'PERRL', capRefill: 2, lungSounds: 'CLEAR', heartSounds: 'NORMAL' }
+    }
+  },
   // ... This structure allows for 50+ scenarios by continuing the pattern
 ];
 
 function generateInitialState(r: any, c: any, a: any, b: any, circ: any = 'PULSELESS', hr: number = 0, map: number = 0): any {
     return {
       vitals: { hr, map, spo2: circ === 'PULSELESS' ? 0 : 92, rr: b === 'APNEIC' ? 0 : 16, etco2: circ === 'PULSELESS' ? 0 : 35, temp: 37, co: circ === 'PULSELESS' ? 0 : 4.5 },
-      rhythm: r, consciousness: c, airway: a, breathing: b, circulation: circ
+      rhythm: r, consciousness: c, airway: a, breathing: b, circulation: circ,
+      physicalExam: {
+        pupils: 'PERRL',
+        capRefill: circ === 'PULSELESS' ? 6 : 2,
+        lungSounds: 'CLEAR',
+        heartSounds: 'NORMAL'
+      }
     };
 }
 

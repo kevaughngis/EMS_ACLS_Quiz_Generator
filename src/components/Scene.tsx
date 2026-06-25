@@ -240,6 +240,19 @@ export const MedicalRoom = ({
               <meshStandardMaterial color="#e2e8f0" />
           </Box>
       </group>
+
+      {/* Ventilator Cart */}
+      <group position={[1.8, 0, -1.0]} onClick={() => onEquipmentClick('VENTILATOR')}>
+          <Box args={[0.6, 1.1, 0.6]} position={[0, 0.55, 0]} castShadow>
+              <meshStandardMaterial color="#e2e8f0" />
+          </Box>
+          <Box args={[0.5, 0.5, 0.3]} position={[0, 1.4, 0]} castShadow>
+              <meshStandardMaterial color="#334155" />
+          </Box>
+          <Box args={[0.4, 0.3, 0.01]} position={[0, 1.4, 0.16]}>
+              <meshStandardMaterial color="#000" emissive="#00e5ff" emissiveIntensity={0.5} />
+          </Box>
+      </group>
     </>
   );
 };
