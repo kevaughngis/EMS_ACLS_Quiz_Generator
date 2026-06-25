@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import { Crosshair, Wind, Activity, CheckCircle2, AlertTriangle } from 'lucide-react';
 
-export type MinigameType = 'INTUBATION' | 'IO_ACCESS' | 'BVM_VENTILATION';
+export type MinigameType = 'INTUBATION' | 'IO_ACCESS' | 'BVM_VENTILATION' | 'NEEDLE_DECOMPRESSION' | 'TOURNIQUET';
 
 interface ProcedureMinigameProps {
   type: MinigameType;
@@ -53,6 +53,8 @@ export const ProcedureMinigame: React.FC<ProcedureMinigameProps> = ({ type, onSu
                 {type === 'INTUBATION' && <IntubationGame onComplete={onSuccess} onFail={onFailure} />}
                 {type === 'BVM_VENTILATION' && <VentilationGame onComplete={onSuccess} onFail={onFailure} />}
                 {type === 'IO_ACCESS' && <IOGame onComplete={onSuccess} onFail={onFailure} />}
+                {type === 'NEEDLE_DECOMPRESSION' && <NeedleGame onComplete={onSuccess} onFail={onFailure} />}
+                {type === 'TOURNIQUET' && <TourniquetGame onComplete={onSuccess} onFail={onFailure} />}
               </motion.div>
             )}
           </AnimatePresence>
@@ -60,6 +62,96 @@ export const ProcedureMinigame: React.FC<ProcedureMinigameProps> = ({ type, onSu
       </div>
     </div>
   );
+};
+
+const NeedleGame = ({ onComplete, onFail }: { onComplete: () => void, onFail: (s: string) => void }) => {
+  const [depth, setDepth] = useState(0);
+  const [success, setSuccess] = useState(false);
+
+  const handleInsert = () => {
+    setDepth(prev => {
+        const next = prev + 10;
+        if (next >= 100) {
+            setSuccess(true);
+            setTimeout(onComplete, 1500);
+        }
+        return next;
+    });
+  };
+
+  return (
+    <div className="w-full flex flex-col items-center gap-12">
+        <div className="relative w-full max-w-sm h-64 bg-black/40 rounded-3xl border border-white/5 flex flex-col items-center justify-center">
+            {success && (
+                <motion.div
+                    initial={{ scale: 0 }} animate={{ scale: 1 }}
+                    className="absolute inset-0 bg-medical-cyan/20 flex flex-col items-center justify-center gap-4 z-10"
+                >
+                    <Wind className="text-medical-cyan w-16 h-16 animate-bounce" />
+                    <div className="text-medical-cyan font-black uppercase italic tracking-tighter">Pleural Decompression Successful</div>
+                </motion.div>
+            )}
+            <div className="text-6xl font-black text-white/5 uppercase italic tracking-tighter absolute select-none">NEEDLE</div>
+            <div className="flex gap-1 h-32 items-end">
+                {[...Array(10)].map((_, i) => (
+                    <div key={i} className={`w-4 rounded-full transition-all ${i * 10 < depth ? 'bg-medical-cyan' : 'bg-white/5'}`} style={{ height: `${20 + i*5}%` }} />
+                ))}
+            </div>
+        </div>
+
+        <button
+            onClick={handleInsert}
+            disabled={success}
+            className="group relative px-12 py-6 bg-medical-dark border-2 border-medical-cyan text-medical-cyan font-black rounded-3xl hover:bg-medical-cyan hover:text-medical-dark transition-all uppercase tracking-widest"
+        >
+            Insert Decompression Needle
+        </button>
+    </div>
+  );
+};
+
+const TourniquetGame = ({ onComplete, onFail }: { onComplete: () => void, onFail: (s: string) => void }) => {
+    const [tension, setTension] = useState(0);
+    const [turns, setTurns] = useState(0);
+
+    const handleTurn = () => {
+        setTurns(prev => prev + 1);
+        setTension(prev => Math.min(100, prev + 15));
+        if (tension >= 85) {
+            onComplete();
+        }
+    };
+
+    return (
+        <div className="w-full flex flex-col items-center gap-8">
+            <div className="w-64 h-64 relative flex items-center justify-center">
+                <motion.div
+                    animate={{ rotate: turns * 90 }}
+                    className="w-48 h-8 bg-medical-yellow rounded-full shadow-[0_0_20px_rgba(255,234,0,0.3)] relative"
+                >
+                    <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 bg-medical-dark/20"></div>
+                </motion.div>
+                <div className="absolute inset-0 border-8 border-dashed border-white/5 rounded-full animate-[spin_20s_linear_infinite]"></div>
+            </div>
+
+            <div className="w-full max-w-xs">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                    <span>Pressure: {Math.floor(tension)}%</span>
+                    <span className="text-medical-yellow">DISTAL PULSE: {tension > 80 ? 'ABSENT' : 'PRESENT'}</span>
+                </div>
+                <div className="h-3 bg-white/5 rounded-full overflow-hidden">
+                    <motion.div className="h-full bg-medical-yellow" style={{ width: `${tension}%` }} />
+                </div>
+            </div>
+
+            <button
+                onClick={handleTurn}
+                className="px-12 py-5 bg-medical-yellow text-medical-dark font-black rounded-2xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+            >
+                Turn Windlass
+            </button>
+        </div>
+    );
 };
 
 const IntubationGame = ({ onComplete, onFail }: { onComplete: () => void, onFail: (s: string) => void }) => {

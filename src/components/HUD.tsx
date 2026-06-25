@@ -13,10 +13,11 @@ import { DefibInterface } from './DefibInterface';
 import { CommunicationHub } from './CommunicationHub';
 import { EquipmentBag } from './EquipmentBag';
 import { VitalsTrends } from './VitalsTrends';
+import { CareerDashboard } from './CareerDashboard';
 import { ProcedureMinigame } from './ProcedureMinigame';
 import type { MinigameType } from './ProcedureMinigame';
 import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
-import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp } from 'lucide-react';
+import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -294,6 +295,14 @@ const HUD = () => {
             HISTORY
           </HUDButton>
 
+          <HUDButton
+            onClick={() => setProcedure('CAREER')}
+            variant="success"
+            icon={<Trophy size={16} />}
+          >
+            CAREER
+          </HUDButton>
+
           <div className="bg-medical-dark/80 backdrop-blur-md px-6 py-2 rounded-xl border border-white/10 shadow-xl flex flex-col items-end min-w-[120px]">
             <div className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Elapsed Time</div>
             <div className="text-2xl font-mono font-black text-medical-yellow tabular-nums">02:45</div>
@@ -461,6 +470,7 @@ const HUD = () => {
       {activeProcedure === 'HISTORY' && <CommunicationHub onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'EQUIPMENT' && <EquipmentBag onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'VITALS_TRENDS' && <VitalsTrends onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'CAREER' && <CareerDashboard onClose={() => setProcedure('NONE')} />}
 
       {activeMinigame && (
         <ProcedureMinigame
@@ -470,7 +480,9 @@ const HUD = () => {
             const actionMap: Record<MinigameType, string> = {
               'INTUBATION': 'INTUBATE_SUCCESS',
               'IO_ACCESS': 'IO_START',
-              'BVM_VENTILATION': 'VENTILATE_SUCCESS'
+              'BVM_VENTILATION': 'VENTILATE_SUCCESS',
+              'NEEDLE_DECOMPRESSION': 'NEEDLE_DECOMPRESSION_SUCCESS',
+              'TOURNIQUET': 'TOURNIQUET_SUCCESS'
             };
             applyAction(actionMap[activeMinigame]);
             setActiveMinigame(null);

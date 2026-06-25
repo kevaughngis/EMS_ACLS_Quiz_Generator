@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { motion } from 'framer-motion';
-import { Briefcase, Zap, Wind, Syringe, Box } from 'lucide-react';
+import { Briefcase, Zap, Wind, Syringe, Box, Activity } from 'lucide-react';
 
 export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { applyAction, setProcedure } = useStore();
-  const [category, setCategory] = useState<'AIRWAY' | 'CIRCULATION' | 'DRUGS'>('AIRWAY');
+  const [category, setCategory] = useState<'AIRWAY' | 'CIRCULATION' | 'DRUGS' | 'TRAUMA'>('AIRWAY');
 
   return (
     <div className="fixed inset-0 bg-slate-900/95 z-[90] flex items-center justify-center p-8 backdrop-blur-sm">
@@ -25,6 +25,7 @@ export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => 
            <TabButton active={category === 'AIRWAY'} onClick={() => setCategory('AIRWAY')} icon={<Wind size={16}/>} label="Airway" />
            <TabButton active={category === 'CIRCULATION'} onClick={() => setCategory('CIRCULATION')} icon={<Zap size={16}/>} label="Circulation" />
            <TabButton active={category === 'DRUGS'} onClick={() => setCategory('DRUGS')} icon={<Syringe size={16}/>} label="Pharmacy" />
+           <TabButton active={category === 'TRAUMA'} onClick={() => setCategory('TRAUMA')} icon={<Activity size={16}/>} label="Trauma" />
         </div>
 
         {/* Grid */}
@@ -54,6 +55,14 @@ export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => 
                <InventoryItem label="Adenosine 6mg" icon={<Syringe />} onClick={() => applyAction('ADENOSINE')} />
                <InventoryItem label="Narcan 2mg" icon={<Syringe />} onClick={() => applyAction('NARCAN')} />
                <InventoryItem label="Dextrose 50%" icon={<Syringe />} onClick={() => applyAction('DEXTROSE')} />
+             </>
+           )}
+           {category === 'TRAUMA' && (
+             <>
+               <InventoryItem label="14G Needle" onClick={() => { onClose(); (window as any).startMinigame?.('NEEDLE_DECOMPRESSION'); }} />
+               <InventoryItem label="Tourniquet" onClick={() => { onClose(); (window as any).startMinigame?.('TOURNIQUET'); }} />
+               <InventoryItem label="Chest Seal" onClick={() => applyAction('CHEST_SEAL')} />
+               <InventoryItem label="TXA 1g" onClick={() => applyAction('TXA_ADMIN')} />
              </>
            )}
         </div>

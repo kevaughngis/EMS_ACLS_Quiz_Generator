@@ -9,8 +9,11 @@ interface PatientModelProps {
 }
 
 export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
+  const { patientState, activePatientIndex, secondaryPatientState } = useStore();
   const [hovered, setHovered] = useState<string | null>(null);
   const chestRef = useRef<THREE.Group>(null);
+
+  const currentState = activePatientIndex === 0 ? patientState : secondaryPatientState;
 
   useFrame((state) => {
     if (chestRef.current) {
@@ -20,7 +23,23 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
     }
   });
 
-  const skinMat = { color: "#f3c1ad", roughness: 0.3 };
+  const getSkinColor = () => {
+    if (!currentState) return "#f3c1ad";
+    const spo2 = currentState.vitals.spo2;
+    const map = currentState.vitals.map;
+
+    // Mix colors based on clinical state
+    const base = new THREE.Color("#f3c1ad");
+    const cyanotic = new THREE.Color("#64b5f6"); // Blue tint
+    const pallid = new THREE.Color("#e2e8f0");   // Grey/Pale tint
+
+    if (spo2 < 85) base.lerp(cyanotic, (85 - spo2) / 40);
+    if (map < 60) base.lerp(pallid, (60 - map) / 40);
+
+    return `#${base.getHexString()}`;
+  };
+
+  const skinMat = { color: getSkinColor(), roughness: 0.3 };
   const gownMat = { color: "#93c5fd", roughness: 0.8 };
 
   return (
