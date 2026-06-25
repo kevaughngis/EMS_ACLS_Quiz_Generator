@@ -69,7 +69,7 @@ export const useStore = create<AppState>()(
             progress: { ...progress, xp: progress.xp + 50 },
             logs: [...logs, "Correct dosage calculated! +50 XP"]
         });
-        get().applyAction(`DRUG_${activeChallenge.drug}`);
+        get().applyAction(activeChallenge.protocolAction);
     } else {
         set({ logs: [...logs, "Incorrect dosage! High risk of medication error."] });
     }
@@ -109,6 +109,7 @@ export const useStore = create<AppState>()(
         const dose = +(weight * 0.01).toFixed(2);
         set({ activeChallenge: {
             drug: 'Epinephrine (0.01mg/kg)',
+            protocolAction: 'EPINEPHRINE',
             correctDose: dose,
             unit: 'mg',
             options: [dose, +(dose * 2).toFixed(2), +(dose / 2).toFixed(2), +(dose + 0.1).toFixed(2)].sort()

@@ -96,23 +96,45 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
   );
 };
 
-const TeamMemberModel = ({ position, name, role, color }: any) => (
-    <group position={position}>
-        <Cylinder args={[0.3, 0.4, 1.7]} position={[0, 0.85, 0]}>
-            <meshStandardMaterial color={color} />
-        </Cylinder>
-        <Sphere args={[0.25]} position={[0, 1.9, 0]}>
-            <meshStandardMaterial color="#f3c1ad" />
-        </Sphere>
-        <Html position={[0, 2.3, 0]} center>
-            <div className="bg-black/80 px-2 py-0.5 rounded border border-white/20 text-[8px] font-black text-white whitespace-nowrap uppercase tracking-widest">
-                {role}: {name}
-            </div>
-        </Html>
-    </group>
-);
+const TeamMemberModel = ({ position, name, role, color, onClick }: any) => {
+    const [hovered, setHovered] = useState(false);
 
-export const MedicalRoom = ({ onEquipmentClick }: { onEquipmentClick: (type: string) => void }) => {
+    return (
+        <group
+            position={position}
+            onClick={(e) => { e.stopPropagation(); onClick(); }}
+            onPointerOver={() => setHovered(true)}
+            onPointerOut={() => setHovered(false)}
+        >
+            <Cylinder args={[0.3, 0.4, 1.7]} position={[0, 0.85, 0]}>
+                <meshStandardMaterial color={hovered ? '#60a5fa' : color} />
+            </Cylinder>
+            <Sphere args={[0.25]} position={[0, 1.9, 0]}>
+                <meshStandardMaterial color="#f3c1ad" />
+            </Sphere>
+            <Html position={[0, 2.3, 0]} center>
+                <div className="bg-black/80 px-2 py-0.5 rounded border border-white/20 text-[8px] font-black text-white whitespace-nowrap uppercase tracking-widest">
+                    {role}: {name}
+                </div>
+            </Html>
+            {hovered && (
+                <Html position={[0, 0.5, 0]} center>
+                    <div className="bg-medical-cyan text-medical-dark px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap uppercase shadow-lg">
+                        ASSIGN TASK
+                    </div>
+                </Html>
+            )}
+        </group>
+    );
+};
+
+export const MedicalRoom = ({
+    onEquipmentClick,
+    onTeamClick
+}: {
+    onEquipmentClick: (type: string) => void,
+    onTeamClick: (memberId: string) => void
+}) => {
   const { environment, team } = useStore();
 
   return (
@@ -129,8 +151,20 @@ export const MedicalRoom = ({ onEquipmentClick }: { onEquipmentClick: (type: str
       </group>
 
       {/* Team Members */}
-      <TeamMemberModel position={[-1.5, 0, 1.5]} role="NURSE" name={team[0].name} color="#1e40af" />
-      <TeamMemberModel position={[1.5, 0, 1.5]} role="RT" name={team[1].name} color="#15803d" />
+      <TeamMemberModel
+        position={[-1.5, 0, 1.5]}
+        role="NURSE"
+        name={team[0].name}
+        color="#1e40af"
+        onClick={() => onTeamClick(team[0].id)}
+      />
+      <TeamMemberModel
+        position={[1.5, 0, 1.5]}
+        role="RT"
+        name={team[1].name}
+        color="#15803d"
+        onClick={() => onTeamClick(team[1].id)}
+      />
 
       {/* Ambulance Walls */}
       {environment === 'AMBULANCE' && (

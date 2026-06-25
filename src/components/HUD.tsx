@@ -7,8 +7,10 @@ import Procedures from './Procedures';
 import PharmacyMath from './PharmacyMath';
 import HandoverReport from './HandoverReport';
 import AnatomyLesson from './AnatomyLesson';
+import { TwelveLeadECG } from './TwelveLeadECG';
+import { DiagnosticsCenter } from './DiagnosticsCenter';
 import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
-import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2 } from 'lucide-react';
+import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -21,6 +23,8 @@ const HUD = () => {
   const { patientState, logs, applyAction, tick, scenario, studyMode, toggleStudyMode, hints, addHint, isSimulating, activeProcedure, setProcedure } = useStore();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [showTwelveLead, setShowTwelveLead] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   const lastBeepTime = useRef(0);
 
@@ -187,6 +191,22 @@ const HUD = () => {
             HANDOVER
           </HUDButton>
 
+          <HUDButton
+            onClick={() => setShowTwelveLead(true)}
+            variant="primary"
+            icon={<Grid3X3 size={16} />}
+          >
+            12-LEAD
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setShowDiagnostics(true)}
+            variant="primary"
+            icon={<Microscope size={16} />}
+          >
+            DIAGS
+          </HUDButton>
+
           <div className="bg-medical-dark/80 backdrop-blur-md px-6 py-2 rounded-xl border border-white/10 shadow-xl flex flex-col items-end min-w-[120px]">
             <div className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Elapsed Time</div>
             <div className="text-2xl font-mono font-black text-medical-yellow tabular-nums">02:45</div>
@@ -347,6 +367,9 @@ const HUD = () => {
           description="Explore the electrical and mechanical properties of the heart. Understand how ventricular tachycardia degenerates into fibrillation and why early defibrillation is critical for survival."
         />
       )}
+
+      {showTwelveLead && <TwelveLeadECG onClose={() => setShowTwelveLead(false)} />}
+      {showDiagnostics && <DiagnosticsCenter onClose={() => setShowDiagnostics(false)} />}
 
       {/* Bottom HUD - Interaction Instructions */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-8 z-40">

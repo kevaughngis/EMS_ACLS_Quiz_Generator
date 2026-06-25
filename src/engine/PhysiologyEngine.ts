@@ -69,7 +69,29 @@ export class PhysiologyEngine {
     this.cumulativeCPR = Math.max(0, this.cumulativeCPR - dt * 0.5);
     vitals.spo2 = Math.max(0, Math.min(100, this.oxygen + (Math.random() - 0.5)));
 
+    this.updateTwelveLead();
     this.updateClinicalStatus();
+  }
+
+  private updateTwelveLead() {
+    const rhythm = this.state.rhythm;
+    const leads = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
+
+    this.state.twelveLead = leads.map(l => {
+      let st = 0;
+
+      if (rhythm === 'STEMI_ANTERIOR') {
+        if (['V1', 'V2', 'V3', 'V4'].includes(l)) st = 4.5;
+        if (['II', 'III', 'aVF'].includes(l)) st = -1.0; // Reciprocal
+      } else if (rhythm === 'STEMI_INFERIOR') {
+        if (['II', 'III', 'aVF'].includes(l)) st = 3.0;
+        if (['I', 'aVL'].includes(l)) st = -1.5; // Reciprocal
+      } else if (rhythm === 'HYPERKALEMIA') {
+        st = 0.5; // Mild elevation or peaked T (simulated as slight ST elevation for now)
+      }
+
+      return { lead: l, stSegment: st };
+    });
   }
 
   private updateClinicalStatus() {
