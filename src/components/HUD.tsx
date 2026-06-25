@@ -17,6 +17,10 @@ import { CareerDashboard } from './CareerDashboard';
 import { PhysicalExam } from './PhysicalExam';
 import { VentilatorInterface } from './VentilatorInterface';
 import { PharmacyCabinet } from './PharmacyCabinet';
+import { POCUSInterface } from './POCUSInterface';
+import { ConsultationHub } from './ConsultationHub';
+import { ProtocolTablet } from './ProtocolTablet';
+import { IVPumpTitration } from './IVPumpTitration';
 import { ScenarioSandbox } from './ScenarioSandbox';
 import { ProcedureMinigame } from './ProcedureMinigame';
 import type { MinigameType } from './ProcedureMinigame';
@@ -160,6 +164,7 @@ const HUD = () => {
   const handleAssess = (part: string) => {
     if (part === 'DEFIBRILLATOR') setProcedure('DEFIB_INTERFACE');
     else if (part === 'VENTILATOR') setProcedure('VENTILATOR');
+    else if (part === 'IV_PUMP') setProcedure('IV_TITRATION');
     else applyAction(`ASSESS_${part}`);
   };
 
@@ -283,6 +288,30 @@ const HUD = () => {
             icon={<Microscope size={16} />}
           >
             DIAGS
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('POCUS')}
+            variant="primary"
+            icon={<Database size={16} />}
+          >
+            POCUS
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('CONSULT')}
+            variant="primary"
+            icon={<Phone size={16} />}
+          >
+            CONSULT
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('PROTOCOL_TABLET')}
+            variant="primary"
+            icon={<BookOpen size={16} />}
+          >
+            GUIDE
           </HUDButton>
 
           <HUDButton
@@ -496,6 +525,10 @@ const HUD = () => {
       {activeProcedure === 'PHYSICAL_EXAM' && <PhysicalExam onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'VENTILATOR' && <VentilatorInterface onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'PHARMACY' && <PharmacyCabinet onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'POCUS' && <POCUSInterface onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'CONSULT' && <ConsultationHub onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'PROTOCOL_TABLET' && <ProtocolTablet onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'IV_TITRATION' && <IVPumpTitration onClose={() => setProcedure('NONE')} />}
 
       {activeMinigame && (
         <ProcedureMinigame
