@@ -13,6 +13,8 @@ import { DefibInterface } from './DefibInterface';
 import { CommunicationHub } from './CommunicationHub';
 import { EquipmentBag } from './EquipmentBag';
 import { VitalsTrends } from './VitalsTrends';
+import { ProcedureMinigame } from './ProcedureMinigame';
+import type { MinigameType } from './ProcedureMinigame';
 import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
 import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,11 +26,15 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const HUD = () => {
-  const { patientState, logs, applyAction, tick, scenario, studyMode, toggleStudyMode, hints, addHint, isSimulating, activeProcedure, setProcedure } = useStore();
+  const {
+    patientState, secondaryPatientState, activePatientIndex, setActivePatient, triagePatient,
+    logs, applyAction, tick, scenario, studyMode, toggleStudyMode, hints, addHint, isSimulating, activeProcedure, setProcedure
+  } = useStore();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
   const [showTwelveLead, setShowTwelveLead] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [activeMinigame, setActiveMinigame] = useState<MinigameType | null>(null);
 
   const lastBeepTime = useRef(0);
 
@@ -37,34 +43,36 @@ const HUD = () => {
     const interval = setInterval(() => {
         tick();
 
+        const monitoredPatient = activePatientIndex === 0 ? patientState : secondaryPatientState;
+
         // Live AI Coaching
-        if (scenario && patientState && isSimulating) {
+        if (scenario && monitoredPatient && isSimulating) {
             hintCooldown--;
             if (hintCooldown <= 0) {
-                getLiveCoachingHint(scenario.protocol, logs, patientState.vitals).then(h => {
+                getLiveCoachingHint(scenario.protocol, logs, monitoredPatient.vitals).then(h => {
                     if (h) addHint(h);
                 });
                 hintCooldown = 150; // Every 15 seconds
             }
         }
 
-        // Handle Audio
-        if (patientState && patientState.vitals.hr > 0) {
-            const intervalMs = (60 / patientState.vitals.hr) * 1000;
+        // Handle Audio for Active Patient
+        if (monitoredPatient && monitoredPatient.vitals.hr > 0) {
+            const intervalMs = (60 / monitoredPatient.vitals.hr) * 1000;
             const now = Date.now();
             if (now - lastBeepTime.current > intervalMs) {
-                soundEngine.playBeep(patientState.vitals.hr, patientState.vitals.spo2);
+                soundEngine.playBeep(monitoredPatient.vitals.hr, monitoredPatient.vitals.spo2);
                 lastBeepTime.current = now;
             }
 
             // Critical alarms
-            if (patientState.vitals.spo2 < 85 || patientState.vitals.hr < 40 || patientState.vitals.hr > 160) {
+            if (monitoredPatient.vitals.spo2 < 85 || monitoredPatient.vitals.hr < 40 || monitoredPatient.vitals.hr > 160) {
                 if (now % 1000 < 100) soundEngine.playCriticalAlarm();
             }
         }
     }, 100);
     return () => clearInterval(interval);
-  }, [tick, patientState]);
+  }, [tick, patientState, secondaryPatientState, activePatientIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -140,6 +148,17 @@ const HUD = () => {
     applyAction(`ASSESS_${part}`);
   };
 
+  const currentPatient = activePatientIndex === 0 ? patientState : secondaryPatientState;
+
+  const startMinigame = (type: MinigameType) => {
+    setActiveMinigame(type);
+  };
+
+  useEffect(() => {
+    (window as any).startMinigame = startMinigame;
+    return () => { delete (window as any).startMinigame; };
+  }, []);
+
   const showAIReview = async () => {
     setLoadingAI(true);
     const result = await getScenarioFeedback(scenario?.protocol || 'ACLS', logs);
@@ -150,6 +169,24 @@ const HUD = () => {
   return (
     <div className="relative h-screen w-screen overflow-hidden text-white font-sans selection:bg-medical-cyan/30">
       <SimulationView onAssess={handleAssess} />
+
+      {/* Triage / Patient Switcher */}
+      {secondaryPatientState && (
+        <div className="absolute top-28 left-1/2 -translate-x-1/2 z-40 flex gap-4">
+           <PatientTab
+             active={activePatientIndex === 0}
+             onClick={() => setActivePatient(0)}
+             label="Patient A"
+             onTriage={(tag) => triagePatient(0, tag)}
+           />
+           <PatientTab
+             active={activePatientIndex === 1}
+             onClick={() => setActivePatient(1)}
+             label="Patient B"
+             onTriage={(tag) => triagePatient(1, tag)}
+           />
+        </div>
+      )}
 
       {/* Live AI Hint Overlay */}
       <AnimatePresence>
@@ -277,21 +314,21 @@ const HUD = () => {
                 </div>
                 <div className="text-[10px] font-bold opacity-30 uppercase tracking-widest">x1.0 Gain</div>
             </div>
-            <ECGMonitor rhythm={patientState.rhythm} hr={patientState.vitals.hr} />
+            <ECGMonitor rhythm={currentPatient!.rhythm} hr={currentPatient!.vitals.hr} />
             <div className="p-6 bg-black/20 flex items-center justify-between">
                 <div>
                     <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Heart Rate</div>
                     <div className={cn(
                         "text-5xl font-black font-mono transition-colors",
-                        patientState.vitals.hr > 150 || patientState.vitals.hr < 40 ? "text-medical-red animate-pulse" : "text-medical-green"
+                        currentPatient!.vitals.hr > 150 || currentPatient!.vitals.hr < 40 ? "text-medical-red animate-pulse" : "text-medical-green"
                     )}>
-                        {Math.round(patientState.vitals.hr)}
+                        {Math.round(currentPatient!.vitals.hr)}
                         <span className="text-sm font-normal opacity-50 ml-1 italic uppercase">bpm</span>
                     </div>
                 </div>
                 <div className="text-right">
                     <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Rhythm</div>
-                    <div className="text-sm font-bold text-white/80">{patientState.rhythm}</div>
+                    <div className="text-sm font-bold text-white/80">{currentPatient!.rhythm}</div>
                 </div>
             </div>
         </div>
@@ -299,35 +336,35 @@ const HUD = () => {
         <div className="grid grid-cols-2 gap-3">
           <VitalCard
             label="SpO2"
-            value={patientState.vitals.spo2}
+            value={currentPatient!.vitals.spo2}
             unit="%"
             color="text-medical-cyan"
             icon={<Wind size={16}/>}
-            isCritical={patientState.vitals.spo2 < 90}
+            isCritical={currentPatient!.vitals.spo2 < 90}
           />
           <VitalCard
             label="MAP"
-            value={patientState.vitals.map}
+            value={currentPatient!.vitals.map}
             unit="mmHg"
             color="text-medical-red"
             icon={<Activity size={16}/>}
-            isCritical={patientState.vitals.map < 60 || patientState.vitals.map > 120}
+            isCritical={currentPatient!.vitals.map < 60 || currentPatient!.vitals.map > 120}
           />
           <VitalCard
             label="ETCO2"
-            value={patientState.vitals.etco2}
+            value={currentPatient!.vitals.etco2}
             unit="mmHg"
             color="text-medical-yellow"
             icon={<FlaskConical size={16}/>}
-            isCritical={patientState.vitals.etco2 < 10 || patientState.vitals.etco2 > 50}
+            isCritical={currentPatient!.vitals.etco2 < 10 || currentPatient!.vitals.etco2 > 50}
           />
           <VitalCard
             label="TEMP"
-            value={patientState.vitals.temp}
+            value={currentPatient!.vitals.temp}
             unit="°C"
             color="text-medical-blue"
             icon={<Thermometer size={16}/>}
-            isCritical={patientState.vitals.temp < 35}
+            isCritical={currentPatient!.vitals.temp < 35}
           />
         </div>
       </motion.div>
@@ -425,6 +462,25 @@ const HUD = () => {
       {activeProcedure === 'EQUIPMENT' && <EquipmentBag onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'VITALS_TRENDS' && <VitalsTrends onClose={() => setProcedure('NONE')} />}
 
+      {activeMinigame && (
+        <ProcedureMinigame
+          type={activeMinigame}
+          onClose={() => setActiveMinigame(null)}
+          onSuccess={() => {
+            const actionMap: Record<MinigameType, string> = {
+              'INTUBATION': 'INTUBATE_SUCCESS',
+              'IO_ACCESS': 'IO_START',
+              'BVM_VENTILATION': 'VENTILATE_SUCCESS'
+            };
+            applyAction(actionMap[activeMinigame]);
+            setActiveMinigame(null);
+          }}
+          onFailure={(reason) => {
+            setActiveMinigame(null);
+          }}
+        />
+      )}
+
       {/* Bottom HUD - Interaction Instructions */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-8 z-40">
         <Instruction hint="Click" action="Assess Patient" />
@@ -502,6 +558,30 @@ const ActionButton = ({ label, onClick, color, icon }: any) => (
     {icon ? icon : <FlaskConical size={16} />}
     {label}
   </button>
+);
+
+const PatientTab = ({ active, onClick, label, onTriage }: any) => (
+    <div className="flex flex-col gap-2">
+       <button
+         onClick={onClick}
+         className={cn(
+             "px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest border transition-all",
+             active ? "bg-medical-cyan text-medical-dark border-medical-cyan shadow-[0_0_20px_rgba(0,229,255,0.3)]" : "bg-medical-dark/80 text-white/40 border-white/10"
+         )}
+       >
+         {label}
+       </button>
+       <div className="flex gap-1 justify-center">
+          <TriageBtn color="bg-medical-red" onClick={() => onTriage('RED')} />
+          <TriageBtn color="bg-medical-yellow" onClick={() => onTriage('YELLOW')} />
+          <TriageBtn color="bg-medical-green" onClick={() => onTriage('GREEN')} />
+          <TriageBtn color="bg-black" onClick={() => onTriage('BLACK')} />
+       </div>
+    </div>
+);
+
+const TriageBtn = ({ color, onClick }: any) => (
+    <button onClick={onClick} className={cn("w-3 h-3 rounded-full border border-white/20 hover:scale-125 transition-transform", color)} />
 );
 
 const Instruction = ({ hint, action }: any) => (

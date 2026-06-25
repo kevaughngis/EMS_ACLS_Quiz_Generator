@@ -30,6 +30,24 @@ export async function getScenarioFeedback(protocol: string, logs: string[]) {
   }
 }
 
+export async function getClinicalChatResponse(persona: string, message: string, context: string): Promise<string> {
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const prompt = `You are a ${persona} in a high-stress medical emergency.
+        Current Context: ${context}
+        The user (Medic/Doctor) says: "${message}"
+        Respond as this character would. Be brief, realistic, and clinically appropriate.
+        If you are the patient and are unconscious, respond with "..." or "No response".
+        Stay in character. Do not provide medical advice as an AI.`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+    } catch (error) {
+        return "The person seems unable to respond clearly right now.";
+    }
+}
+
 export async function getLiveCoachingHint(protocol: string, logs: string[], vitals: any) {
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });

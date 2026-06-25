@@ -118,8 +118,15 @@ export class PhysiologyEngine {
     switch (type) {
       case 'EPINEPHRINE': this.addDrug('Epi', 180, 1.0, 1.0, 0.5); break;
       case 'AMIODARONE': this.addDrug('Amio', 900, -0.2, -0.4, 0); break;
+      case 'ATROPINE': this.addDrug('Atropine', 120, 0, 1.5, 0); break;
+      case 'ADENOSINE': this.addDrug('Adenosine', 6, 0, -2.0, 0); break;
+      case 'NARCAN': this.oxygen = Math.min(100, this.oxygen + 30); break;
+      case 'DEXTROSE': this.ph = Math.min(7.45, this.ph + 0.05); break;
       case 'CPR_COMPRESSION': this.cumulativeCPR = 1.0; break;
       case 'DEFIBRILLATION': this.shock(); break;
+      case 'INTUBATE_SUCCESS': this.state.airway = 'INTUBATED'; break;
+      case 'VENTILATE_SUCCESS': this.oxygen = Math.min(100, this.oxygen + 15); break;
+      case 'SUCTION': if(this.state.airway === 'OBSTRUCTED') this.state.airway = 'CLEAR'; break;
     }
   }
 

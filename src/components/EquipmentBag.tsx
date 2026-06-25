@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Briefcase, Zap, Wind, Syringe, Box } from 'lucide-react';
 
 export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { applyAction } = useStore();
+  const { applyAction, setProcedure } = useStore();
   const [category, setCategory] = useState<'AIRWAY' | 'CIRCULATION' | 'DRUGS'>('AIRWAY');
 
   return (
@@ -31,9 +31,9 @@ export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         <div className="flex-1 p-10 grid grid-cols-3 gap-6 overflow-y-auto">
            {category === 'AIRWAY' && (
              <>
-               <InventoryItem label="BVM Setup" icon={<Wind />} onClick={() => applyAction('SETUP_BVM')} />
-               <InventoryItem label="ET Tube (7.5)" onClick={() => applyAction('PREP_INTUBATION')} />
-               <InventoryItem label="Laryngoscope" onClick={() => applyAction('PREP_INTUBATION')} />
+               <InventoryItem label="BVM Ventilation" icon={<Wind />} onClick={() => { onClose(); (window as any).startMinigame?.('BVM_VENTILATION'); }} />
+               <InventoryItem label="ET Tube (7.5)" onClick={() => { onClose(); (window as any).startMinigame?.('INTUBATION'); }} />
+               <InventoryItem label="Laryngoscope" onClick={() => { onClose(); (window as any).startMinigame?.('INTUBATION'); }} />
                <InventoryItem label="Suction" onClick={() => applyAction('SUCTION')} />
                <InventoryItem label="OPA / NPA" onClick={() => applyAction('AIRWAY_ADJUNCT')} />
              </>
@@ -41,7 +41,7 @@ export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => 
            {category === 'CIRCULATION' && (
              <>
                <InventoryItem label="18G Angiocath" icon={<Zap />} onClick={() => applyAction('IV_START')} />
-               <InventoryItem label="IO Drill" onClick={() => applyAction('IO_START')} />
+               <InventoryItem label="IO Drill" onClick={() => { onClose(); (window as any).startMinigame?.('IO_ACCESS'); }} />
                <InventoryItem label="Normal Saline" onClick={() => applyAction('FLUID_BOLUS')} />
                <InventoryItem label="Pressure Bag" onClick={() => applyAction('FLUID_BOLUS')} />
              </>
