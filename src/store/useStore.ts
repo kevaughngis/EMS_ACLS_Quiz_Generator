@@ -20,8 +20,9 @@ interface AppState {
   team: TeamMember[];
   progress: UserProgress;
   activeChallenge: CalculationChallenge | null;
-  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW';
+  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW' | 'LEADERSHIP' | 'PCR_CHART' | 'TRAUMA_SUITE' | 'VASCULAR_ACCESS' | 'RADIOLOGY' | 'ALGORITHM_AR' | 'CRISIS_FIX';
   hints: string[];
+  activeCrisis: { id: string, label: string, description: string } | null;
 
   // Defib State
   defibEnergy: number;
@@ -39,9 +40,10 @@ interface AppState {
   setEnvironment: (env: EnvironmentType) => void;
   assignTeamTask: (memberId: string, task: string) => void;
   solveChallenge: (answer: number) => void;
-  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW') => void;
+  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW' | 'LEADERSHIP' | 'PCR_CHART' | 'TRAUMA_SUITE' | 'VASCULAR_ACCESS' | 'RADIOLOGY' | 'ALGORITHM_AR' | 'CRISIS_FIX') => void;
   addXP: (amount: number) => void;
   addHint: (hint: string) => void;
+  setStore: (partial: Partial<AppState>) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -59,13 +61,16 @@ export const useStore = create<AppState>()(
 
   environment: 'HOSPITAL',
   team: [
-    { id: '1', role: 'NURSE', name: 'Nurse Sarah', status: 'IDLE' },
-    { id: '2', role: 'RT', name: 'RT Mike', status: 'IDLE' }
+    { id: '1', role: 'NURSE', name: 'Nurse Sarah', status: 'IDLE', stress: 0 },
+    { id: '2', role: 'RT', name: 'RT Mike', status: 'IDLE', stress: 0 }
   ],
   progress: { xp: 0, level: 1, mastery: {} },
   activeChallenge: null,
   activeProcedure: 'NONE',
   hints: [],
+  activeCrisis: null,
+
+  setStore: (partial) => set(state => ({ ...state, ...partial })),
 
   defibEnergy: 200,
   defibCharge: 0,
@@ -73,10 +78,14 @@ export const useStore = create<AppState>()(
 
   setEnvironment: (environment) => set({ environment }),
 
-  assignTeamTask: (memberId, task) => set(state => ({
-    team: state.team.map(m => m.id === memberId ? { ...m, status: 'BUSY', currentTask: task } : m),
-    logs: [...state.logs, `Team: ${state.team.find(m => m.id === memberId)?.name} is now ${task}`]
-  })),
+  assignTeamTask: (memberId, task) => set(state => {
+    const member = state.team.find(m => m.id === memberId);
+    const newStress = Math.min(100, (member?.stress || 0) + 15);
+    return {
+        team: state.team.map(m => m.id === memberId ? { ...m, status: 'BUSY', currentTask: task, stress: newStress } : m),
+        logs: [...state.logs, `Team: ${state.team.find(m => m.id === memberId)?.name} is now ${task}`]
+    };
+  }),
 
   solveChallenge: (answer) => {
     const { activeChallenge, progress, logs } = get();
@@ -160,8 +169,20 @@ export const useStore = create<AppState>()(
   },
 
   tick: () => {
-    const { engine, secondaryEngine, isSimulating } = get();
+    const { engine, secondaryEngine, isSimulating, activeCrisis } = get();
     if (isSimulating) {
+        // Random Crisis Chance (0.1% per tick)
+        if (!activeCrisis && Math.random() < 0.001) {
+            const crises = [
+                { id: 'suction_clog', label: 'Suction Unit Clogged', description: 'Debris has obstructed the canister. Airway management is compromised.' },
+                { id: 'monitor_fail', label: 'Monitor Lead Detached', description: 'Signal lost on Lead II. Please reattach electrodes.' },
+                { id: 'iv_infil', label: 'IV Infiltration', description: 'The primary IV site has blown. New access required.' },
+                { id: 'bystander_interference', label: 'Bystander Interference', description: 'A distraught family member is obstructing the workspace. Calm them down.' }
+            ];
+            const randomCrisis = crises[Math.floor(Math.random() * crises.length)];
+            set({ activeCrisis: randomCrisis, logs: [...get().logs, `CRISIS: ${randomCrisis.label}`] });
+        }
+
         if (engine) {
             const newState = engine.update();
             set({ patientState: { ...newState } });

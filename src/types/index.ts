@@ -94,6 +94,7 @@ export interface TeamMember {
   name: string;
   status: 'IDLE' | 'BUSY' | 'DONE';
   currentTask?: string;
+  stress: number; // 0-100
 }
 
 export type EnvironmentType = 'HOSPITAL' | 'AMBULANCE' | 'ER';
