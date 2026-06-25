@@ -38,13 +38,30 @@ export type RhythmType =
   | 'WANDERING_PACEMAKER'
   | 'MAT';
 
+export interface LeadMorphology {
+  lead: string;
+  stSegment?: number; // offset in mm
+  tWave?: number;     // height/polarity
+  qrsWidth?: number;  // multiplier
+}
+
 export interface PatientState {
   vitals: Vitals;
   rhythm: RhythmType;
+  twelveLead?: LeadMorphology[];
   consciousness: 'AWAKE' | 'ALTERED' | 'UNCONSCIOUS';
   airway: 'CLEAR' | 'OBSTRUCTED' | 'INTUBATED';
   breathing: 'NORMAL' | 'LABORED' | 'APNEIC';
   circulation: 'PULSE' | 'PULSELESS';
+}
+
+export interface DiagnosticData {
+  labs?: Record<string, string | number>;
+  imaging?: {
+    type: string;
+    description: string;
+    impression: string;
+  };
 }
 
 export interface Scenario {
@@ -54,4 +71,30 @@ export interface Scenario {
   initialState: PatientState;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   protocol: 'ACLS' | 'BLS' | 'PALS' | 'NRP';
+  patientWeight?: number;
+  diagnostics?: DiagnosticData;
+}
+
+export interface TeamMember {
+  id: string;
+  role: 'NURSE' | 'RT' | 'MEDIC' | 'INTERN';
+  name: string;
+  status: 'IDLE' | 'BUSY' | 'DONE';
+  currentTask?: string;
+}
+
+export type EnvironmentType = 'HOSPITAL' | 'AMBULANCE' | 'ER';
+
+export interface UserProgress {
+  xp: number;
+  level: number;
+  mastery: Record<string, number>; // protocol -> mastery percentage
+}
+
+export interface CalculationChallenge {
+  drug: string;
+  protocolAction: string;
+  correctDose: number;
+  unit: string;
+  options: number[];
 }

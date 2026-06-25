@@ -1,184 +1,135 @@
 import type { PatientState } from '../types';
 
-export interface DrugEffect {
-  name: string;
-  concentration: number;
-  halfLife: number; // in seconds
-  hrEffect: number; // max impact on HR
-  mapEffect: number; // max impact on MAP
-}
-
 export class PhysiologyEngine {
   private state: PatientState;
   private lastUpdate: number;
-  private drugs: Map<string, DrugEffect> = new Map();
-  private oxygenLevel: number = 100; // Intracellular/tissue oxygen
+  private drugs: Map<string, any> = new Map();
+  private oxygen: number = 100;
   private ph: number = 7.4;
+  private potassium: number = 4.0;
+  private volume: number = 5.0; // Liters
+  private cumulativeCPR: number = 0;
 
   constructor(initialState: PatientState) {
     this.state = JSON.parse(JSON.stringify(initialState));
     this.lastUpdate = Date.now();
-    this.initializeDrugs();
-  }
-
-  private initializeDrugs() {
-    // Empty for now, populated on applyIntervention
   }
 
   public update(): PatientState {
     const now = Date.now();
-    const dt = Math.min((now - this.lastUpdate) / 1000, 1.0); // Cap dt to avoid huge jumps
+    const dt = Math.min((now - this.lastUpdate) / 1000, 1.0);
     this.lastUpdate = now;
 
-    this.updateDrugs(dt);
+    this.processKinetics(dt);
     this.simulate(dt);
     return this.state;
   }
 
-  private updateDrugs(dt: number) {
-    this.drugs.forEach((drug, key) => {
-      // Simple exponential decay: C = C0 * e^(-kt) where k = ln(2)/halfLife
-      const k = Math.LN2 / drug.halfLife;
-      drug.concentration *= Math.exp(-k * dt);
-      if (drug.concentration < 0.01) this.drugs.delete(key);
+  private processKinetics(dt: number) {
+    this.drugs.forEach((d, k) => {
+      d.concentration *= Math.exp(-(Math.LN2 / d.halfLife) * dt);
+      if (d.concentration < 0.001) this.drugs.delete(k);
     });
   }
 
   private simulate(dt: number) {
     const { vitals, rhythm } = this.state;
 
-    // 1. Calculate Drug Influences
-    let drugHrMod = 0;
-    let drugMapMod = 0;
-    this.drugs.forEach(drug => {
-      drugHrMod += drug.hrEffect * drug.concentration;
-      drugMapMod += drug.mapEffect * drug.concentration;
+    // 1. Vasoactive/Inotropic Influences
+    let alpha1 = 0, beta1 = 0, beta2 = 0;
+    this.drugs.forEach(d => {
+      alpha1 += d.alpha * d.concentration;
+      beta1 += d.beta1 * d.concentration;
+      beta2 += d.beta2 * d.concentration;
     });
 
-    // 2. Cardiac Output influence
-    // CO = HR * SV
-    const svEfficiency = this.getRhythmEfficiency(rhythm);
-    const hypoxiaModifier = Math.max(0.2, this.oxygenLevel / 100);
-    const baselineSV = 70 * hypoxiaModifier;
+    // 2. Cardiac Output & MAP
+    const eff = this.getEfficiency(rhythm);
+    const targetHr = (this.getBaseHr(rhythm) + beta1 * 40) * (this.ph < 7.1 ? 0.6 : 1.0);
+    vitals.hr += (targetHr - vitals.hr) * dt * 0.4;
 
-    // Smoothly adjust HR towards target including drug effects
-    const baseHr = this.getBaseHrForRhythm(rhythm);
-    const targetHr = Math.max(0, baseHr + drugHrMod);
-    vitals.hr += (targetHr - vitals.hr) * dt * 0.2;
+    const sv = (60 + beta2 * 20) * eff * (this.oxygen / 100) * (this.volume / 5);
+    vitals.co = (vitals.hr * sv) / 1000;
 
-    vitals.co = (vitals.hr * baselineSV * svEfficiency) / 1000; // L/min
+    const svr = 1200 + alpha1 * 800;
+    const targetMap = (vitals.co * svr) / 80;
+    vitals.map += (targetMap - vitals.map) * dt * 0.2;
 
-    // Temperature Effect (Hypothermia slows metabolism)
-    const tempModifier = Math.max(0.5, 1 - (37 - vitals.temp) * 0.1);
-    this.oxygenLevel -= dt * 1.5 * tempModifier;
-
-    // 3. MAP (Mean Arterial Pressure)
-    // SVR influenced by drugs (e.g. Epi increases SVR)
-    const baselineSVR = 1200;
-    const currentSVR = baselineSVR + drugMapMod;
-    const targetMap = (vitals.co * currentSVR) / 80;
-    vitals.map += (targetMap - vitals.map) * dt * 0.1;
-
-    // 4. Oxygen & pH Dynamics
-    if (this.state.breathing === 'APNEIC' || vitals.co < 1) {
-      this.oxygenLevel -= dt * 1.5; // Tissues consuming oxygen
-      this.ph -= dt * 0.01; // Metabilic/Respiratory Acidosis
+    // 3. Respiratory & Metabolic
+    const isArrest = ['VF', 'ASYSTOLE', 'PEA'].includes(rhythm);
+    if (isArrest && this.cumulativeCPR < 0.1) {
+      this.oxygen -= dt * 2.5;
+      this.ph -= dt * 0.02;
     } else {
-      this.oxygenLevel += (100 - this.oxygenLevel) * dt * 0.1;
-      this.ph += (7.4 - this.ph) * dt * 0.05;
-    }
-    this.oxygenLevel = Math.max(0, this.oxygenLevel);
-    vitals.spo2 = Math.max(0, Math.min(100, this.oxygenLevel + (Math.random() * 2 - 1)));
-
-    // 5. ETCO2 dynamics
-    if (vitals.co < 1) {
-      vitals.etco2 = Math.max(5, vitals.etco2 - dt * 1.5); // Minimal CO2 during CPR
-    } else {
-      const targetEtco2 = 40 - (vitals.rr - 12) * 0.5; // Ventilation affects ETCO2
-      vitals.etco2 += (targetEtco2 - vitals.etco2) * dt * 0.05;
+      const vent = (vitals.rr / 12) * (this.state.airway === 'CLEAR' ? 1 : 0.1);
+      this.oxygen += (100 - this.oxygen) * dt * 0.3 * (vent + (isArrest ? 0.2 : 0));
+      this.ph += (7.4 - this.ph) * dt * 0.1 * vent;
     }
 
-    this.applyRhythmConstraints();
+    this.cumulativeCPR = Math.max(0, this.cumulativeCPR - dt * 0.5);
+    vitals.spo2 = Math.max(0, Math.min(100, this.oxygen + (Math.random() - 0.5)));
+
+    this.updateTwelveLead();
+    this.updateClinicalStatus();
   }
 
-  private getBaseHrForRhythm(rhythm: string): number {
-    switch (rhythm) {
-      case 'SINUS': return 75;
-      case 'SBAD': return 40;
-      case 'STACH': return 120;
-      case 'SVT': return 180;
-      case 'ASYSTOLE': return 0;
-      default: return 70;
-    }
-  }
+  private updateTwelveLead() {
+    const rhythm = this.state.rhythm;
+    const leads = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
 
-  private getRhythmEfficiency(rhythm: string): number {
-    switch (rhythm) {
-      case 'SINUS': return 1.0;
-      case 'STACH': return 0.9;
-      case 'AFIB': return 0.75;
-      case 'VT': return 0.2;
-      case 'VF': return 0.0;
-      case 'ASYSTOLE': return 0.0;
-      case 'PEA': return 0.0;
-      default: return 0.8;
-    }
-  }
+    this.state.twelveLead = leads.map(l => {
+      let st = 0;
 
-  private applyRhythmConstraints() {
-    const { vitals, rhythm } = this.state;
-    if (rhythm === 'VF' || rhythm === 'ASYSTOLE' || rhythm === 'PEA') {
-      this.state.circulation = 'PULSELESS';
-      if (rhythm === 'ASYSTOLE') vitals.hr = 0;
-    } else {
-      this.state.circulation = (vitals.map > 40) ? 'PULSE' : 'PULSELESS';
-    }
-  }
-
-  public applyIntervention(type: string, _value?: any) {
-    switch (type) {
-      case 'EPINEPHRINE':
-        this.addDrug('Epinephrine', 1.0, 180, 30, 500);
-        break;
-      case 'AMIODARONE':
-        this.addDrug('Amiodarone', 1.0, 600, -10, -50);
-        break;
-      case 'ATROPINE':
-        this.addDrug('Atropine', 1.0, 120, 40, 0);
-        break;
-      case 'DEFIBRILLATION':
-        this.handleDefib();
-        break;
-      case 'CPR_COMPRESSION':
-        this.state.vitals.co = Math.max(this.state.vitals.co, 1.5); // Manual CO
-        this.state.vitals.map = Math.max(this.state.vitals.map, 30);
-        this.state.vitals.etco2 = Math.max(this.state.vitals.etco2, 12);
-        break;
-    }
-  }
-
-  private addDrug(name: string, conc: number, hl: number, hrE: number, mapE: number) {
-    const existing = this.drugs.get(name);
-    if (existing) {
-      existing.concentration += conc;
-    } else {
-      this.drugs.set(name, { name, concentration: conc, halfLife: hl, hrEffect: hrE, mapEffect: mapE });
-    }
-  }
-
-  private handleDefib() {
-    const { rhythm } = this.state;
-    const shockable = rhythm === 'VF' || rhythm === 'VT';
-    if (shockable) {
-      // Chance of conversion increases with better oxygenation and pH
-      const successChance = (this.oxygenLevel / 100) * (this.ph / 7.4) * 0.7;
-      if (Math.random() < successChance) {
-        this.state.rhythm = 'SINUS';
+      if (rhythm === 'STEMI_ANTERIOR') {
+        if (['V1', 'V2', 'V3', 'V4'].includes(l)) st = 4.5;
+        if (['II', 'III', 'aVF'].includes(l)) st = -1.0; // Reciprocal
+      } else if (rhythm === 'STEMI_INFERIOR') {
+        if (['II', 'III', 'aVF'].includes(l)) st = 3.0;
+        if (['I', 'aVL'].includes(l)) st = -1.5; // Reciprocal
+      } else if (rhythm === 'HYPERKALEMIA') {
+        st = 0.5; // Mild elevation or peaked T (simulated as slight ST elevation for now)
       }
+
+      return { lead: l, stSegment: st };
+    });
+  }
+
+  private updateClinicalStatus() {
+    const { vitals } = this.state;
+    if (vitals.map < 45) this.state.circulation = 'PULSELESS';
+    else this.state.circulation = 'PULSE';
+
+    if (vitals.map < 60 || this.oxygen < 80) this.state.consciousness = 'ALTERED';
+    if (vitals.map < 40 || this.oxygen < 60) this.state.consciousness = 'UNCONSCIOUS';
+    if (vitals.map > 70 && this.oxygen > 90) this.state.consciousness = 'AWAKE';
+  }
+
+  private getEfficiency(r: string): number {
+    const m: any = { SINUS: 1, STACH: 0.9, SBAD: 1, SVT: 0.5, AFIB: 0.7, VT: 0.1, VF: 0, ASYSTOLE: 0, PEA: 0 };
+    return m[r] || 0.8;
+  }
+
+  private getBaseHr(r: string): number {
+    const m: any = { SINUS: 70, STACH: 130, SBAD: 35, SVT: 190, AFIB: 120, VT: 160, VF: 0, ASYSTOLE: 0, PEA: 80 };
+    return m[r] || 70;
+  }
+
+  public applyIntervention(type: string) {
+    switch (type) {
+      case 'EPINEPHRINE': this.addDrug('Epi', 180, 1.0, 1.0, 0.5); break;
+      case 'AMIODARONE': this.addDrug('Amio', 900, -0.2, -0.4, 0); break;
+      case 'CPR_COMPRESSION': this.cumulativeCPR = 1.0; break;
+      case 'DEFIBRILLATION': this.shock(); break;
     }
   }
 
-  public getState(): PatientState {
-    return this.state;
+  private addDrug(name: string, hl: number, a: number, b1: number, b2: number) {
+    this.drugs.set(name, { concentration: 1.0, halfLife: hl, alpha: a, beta1: b1, beta2: b2 });
+  }
+
+  private shock() {
+    if (['VF', 'VT'].includes(this.state.rhythm)) {
+      if (Math.random() < (this.oxygen / 100) * 0.8) this.state.rhythm = 'SINUS';
+    }
   }
 }

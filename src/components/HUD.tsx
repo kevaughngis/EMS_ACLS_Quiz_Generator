@@ -1,10 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useStore } from '../store/useStore';
 import SimulationView from './SimulationView';
+import { soundEngine } from '../engine/SoundEngine';
 import ECGMonitor from './ECGMonitor';
+import Procedures from './Procedures';
+import PharmacyMath from './PharmacyMath';
+import HandoverReport from './HandoverReport';
 import AnatomyLesson from './AnatomyLesson';
-import { getScenarioFeedback } from '../engine/GeminiService';
-import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle } from 'lucide-react';
+import { TwelveLeadECG } from './TwelveLeadECG';
+import { DiagnosticsCenter } from './DiagnosticsCenter';
+import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
+import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -14,14 +20,47 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const HUD = () => {
-  const { patientState, logs, applyAction, tick, scenario, studyMode, toggleStudyMode } = useStore();
+  const { patientState, logs, applyAction, tick, scenario, studyMode, toggleStudyMode, hints, addHint, isSimulating, activeProcedure, setProcedure } = useStore();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [showTwelveLead, setShowTwelveLead] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+
+  const lastBeepTime = useRef(0);
 
   useEffect(() => {
-    const interval = setInterval(tick, 100);
+    let hintCooldown = 0;
+    const interval = setInterval(() => {
+        tick();
+
+        // Live AI Coaching
+        if (scenario && patientState && isSimulating) {
+            hintCooldown--;
+            if (hintCooldown <= 0) {
+                getLiveCoachingHint(scenario.protocol, logs, patientState.vitals).then(h => {
+                    if (h) addHint(h);
+                });
+                hintCooldown = 150; // Every 15 seconds
+            }
+        }
+
+        // Handle Audio
+        if (patientState && patientState.vitals.hr > 0) {
+            const intervalMs = (60 / patientState.vitals.hr) * 1000;
+            const now = Date.now();
+            if (now - lastBeepTime.current > intervalMs) {
+                soundEngine.playBeep(patientState.vitals.hr, patientState.vitals.spo2);
+                lastBeepTime.current = now;
+            }
+
+            // Critical alarms
+            if (patientState.vitals.spo2 < 85 || patientState.vitals.hr < 40 || patientState.vitals.hr > 160) {
+                if (now % 1000 < 100) soundEngine.playCriticalAlarm();
+            }
+        }
+    }, 100);
     return () => clearInterval(interval);
-  }, [tick]);
+  }, [tick, patientState]);
 
   if (!patientState) return (
     <div className="flex items-center justify-center h-screen bg-medical-dark overflow-hidden">
@@ -60,6 +99,13 @@ const HUD = () => {
           color="border-medical-green hover:bg-medical-green/10"
           accent="bg-medical-green"
         />
+        <ProtocolButton
+          onClick={() => useStore.getState().startScenario('nrp-apnea-1')}
+          title="Neonatal Resuscitation"
+          subtitle="NRP Algorithm • Birth Apnea"
+          color="border-medical-yellow hover:bg-medical-yellow/10"
+          accent="bg-medical-yellow"
+        />
       </motion.div>
     </div>
   );
@@ -78,6 +124,28 @@ const HUD = () => {
   return (
     <div className="relative h-screen w-screen overflow-hidden text-white font-sans selection:bg-medical-cyan/30">
       <SimulationView onAssess={handleAssess} />
+
+      {/* Live AI Hint Overlay */}
+      <AnimatePresence>
+        {hints.length > 0 && (
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0 }}
+                className="absolute bottom-24 left-6 z-[60] flex flex-col gap-2 pointer-events-none"
+            >
+                <div className="bg-medical-cyan/10 border-l-4 border-medical-cyan p-4 rounded-r-xl backdrop-blur-md max-w-sm shadow-xl">
+                    <div className="text-[10px] font-black text-medical-cyan uppercase tracking-widest mb-1 flex items-center gap-2">
+                        <MessageSquare size={12} /> AI Preceptor Hint
+                    </div>
+                    <div className="text-sm font-bold text-white italic">"{hints[0]}"</div>
+                </div>
+            </motion.div>
+        )}
+      </AnimatePresence>
+      <Procedures />
+      <PharmacyMath />
+      {activeProcedure === 'HANDOVER' && <HandoverReport />}
 
       {/* CRT Overlay Effect - Simplified but effective */}
       <div className="pointer-events-none absolute inset-0 z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%]"></div>
@@ -113,6 +181,30 @@ const HUD = () => {
             icon={<BookOpen size={16} />}
           >
             STUDY MODE
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('HANDOVER')}
+            variant="primary"
+            icon={<Share2 size={16} />}
+          >
+            HANDOVER
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setShowTwelveLead(true)}
+            variant="primary"
+            icon={<Grid3X3 size={16} />}
+          >
+            12-LEAD
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setShowDiagnostics(true)}
+            variant="primary"
+            icon={<Microscope size={16} />}
+          >
+            DIAGS
           </HUDButton>
 
           <div className="bg-medical-dark/80 backdrop-blur-md px-6 py-2 rounded-xl border border-white/10 shadow-xl flex flex-col items-end min-w-[120px]">
@@ -275,6 +367,9 @@ const HUD = () => {
           description="Explore the electrical and mechanical properties of the heart. Understand how ventricular tachycardia degenerates into fibrillation and why early defibrillation is critical for survival."
         />
       )}
+
+      {showTwelveLead && <TwelveLeadECG onClose={() => setShowTwelveLead(false)} />}
+      {showDiagnostics && <DiagnosticsCenter onClose={() => setShowDiagnostics(false)} />}
 
       {/* Bottom HUD - Interaction Instructions */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-8 z-40">

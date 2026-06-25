@@ -6,7 +6,7 @@ This project is a high-fidelity medical simulation platform designed for Paramed
 - **Frontend**: React 18, TypeScript, Vite
 - **3D Rendering**: Three.js, React Three Fiber, React Three Drei
 - **State Management**: Zustand
-- **Styling**: Tailwind CSS v4 (using `@tailwindcss/postcss`)
+- **Styling**: Tailwind CSS v3
 - **AI**: Google Gemini AI SDK
 - **Icons**: Lucide React
 
