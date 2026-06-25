@@ -28,11 +28,11 @@ const SimulationView: React.FC<SimulationViewProps> = ({ onAssess }) => {
         />
 
         <Suspense fallback={null}>
-          <group position={activePatientIndex === 1 ? [-2, 0, 0] : [0, 0, 0]} transition-position="3s">
+          <group position={activePatientIndex === 1 ? [-2, 0, 0] : [0, 0, 0]}>
             <PatientModel onAssess={onAssess} />
           </group>
           {secondaryPatientState && (
-            <group position={activePatientIndex === 0 ? [2, 0, 0] : [0, 0, 0]} transition-position="3s">
+            <group position={activePatientIndex === 0 ? [2, 0, 0] : [0, 0, 0]}>
                <PatientModel onAssess={onAssess} />
             </group>
           )}

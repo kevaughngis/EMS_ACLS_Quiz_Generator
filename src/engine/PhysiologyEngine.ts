@@ -127,6 +127,8 @@ export class PhysiologyEngine {
       case 'INTUBATE_SUCCESS': this.state.airway = 'INTUBATED'; break;
       case 'VENTILATE_SUCCESS': this.oxygen = Math.min(100, this.oxygen + 15); break;
       case 'SUCTION': if(this.state.airway === 'OBSTRUCTED') this.state.airway = 'CLEAR'; break;
+      case 'NEEDLE_DECOMPRESSION_SUCCESS': this.state.breathing = 'NORMAL'; this.oxygen = Math.min(100, this.oxygen + 20); break;
+      case 'TOURNIQUET_SUCCESS': this.volume = Math.max(2.0, this.volume + 0.1); break; // Stop volume loss
     }
   }
 
