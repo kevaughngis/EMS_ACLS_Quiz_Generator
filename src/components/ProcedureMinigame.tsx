@@ -155,72 +155,104 @@ const TourniquetGame = ({ onComplete, onFail }: { onComplete: () => void, onFail
 };
 
 const IntubationGame = ({ onComplete, onFail }: { onComplete: () => void, onFail: (s: string) => void }) => {
-  const [position, setPosition] = useState({ x: 50, y: 50 });
-  const [target, setTarget] = useState({ x: Math.random() * 60 + 20, y: Math.random() * 60 + 20 });
-  const [alignment, setAlignment] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTarget(prev => ({
-        x: Math.max(20, Math.min(80, prev.x + (Math.random() - 0.5) * 10)),
-        y: Math.max(20, Math.min(80, prev.y + (Math.random() - 0.5) * 10))
-      }));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const [bladePos, setBladePos] = useState({ x: 50, y: 80 });
+  const [tubePos, setTubePos] = useState({ x: 50, y: 50 });
+  const [depth, setDepth] = useState(0);
+  const [phase, setPrepStep] = useState<'BLADE' | 'TUBE'>('BLADE');
+  const [target, setTarget] = useState({ x: 50, y: 35 });
+  const [success, setSuccess] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (success) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setPosition({ x, y });
 
-    const dist = Math.sqrt(Math.pow(x - target.x, 2) + Math.pow(y - target.y, 2));
-    if (dist < 10) {
-      setAlignment(prev => Math.min(100, prev + 2));
+    if (phase === 'BLADE') {
+        setBladePos({ x: x, y: Math.max(20, y) });
+        const dist = Math.sqrt(Math.pow(x - target.x, 2) + Math.pow(y - target.y, 2));
+        if (dist < 8) {
+            setPrepStep('TUBE');
+        }
     } else {
-      setAlignment(prev => Math.max(0, prev - 1));
+        setTubePos({ x, y });
+        const dist = Math.sqrt(Math.pow(x - target.x, 2) + Math.pow(y - target.y, 2));
+        if (dist < 5) {
+            setDepth(prev => Math.min(100, prev + 2));
+            if (depth >= 100) {
+                setSuccess(true);
+                setTimeout(onComplete, 2000);
+            }
+        }
     }
   };
-
-  useEffect(() => {
-    if (alignment >= 100) onComplete();
-  }, [alignment, onComplete]);
 
   return (
     <div className="w-full flex flex-col items-center gap-8">
       <div
-        className="w-80 h-80 bg-black/40 rounded-full border-4 border-white/10 relative cursor-none overflow-hidden"
+        className="w-[500px] h-[500px] bg-red-950/20 rounded-[4rem] border-8 border-slate-900 relative cursor-none overflow-hidden shadow-2xl"
         onMouseMove={handleMouseMove}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.05)_0%,_transparent_70%)]"></div>
+        {/* Airway Landmarks (Anatomical Representation) */}
+        <div className="absolute inset-0 flex items-center justify-center">
+            {/* Tongue */}
+            <div className={`absolute top-1/2 w-80 h-64 bg-red-600/40 rounded-full transition-transform duration-1000 ${phase === 'TUBE' ? '-translate-y-24 scale-y-50 opacity-40' : ''}`}></div>
 
-        {/* Vocal Cords Target */}
+            {/* Epiglottis/Vocal Cords */}
+            <div className="relative w-32 h-40 flex items-center justify-center">
+                <div className="absolute w-24 h-32 bg-pink-200/20 rounded-full border-4 border-pink-400/30"></div>
+                <div className="w-2 h-20 bg-white/60 rounded-full blur-[1px] rotate-[10deg]"></div>
+                <div className="w-2 h-20 bg-white/60 rounded-full blur-[1px] -rotate-[10deg]"></div>
+
+                {/* The "Glottic Opening" */}
+                <div className="w-10 h-10 bg-black rounded-full border-2 border-white/20"></div>
+            </div>
+        </div>
+
+        {/* Laryngoscope Blade */}
         <motion.div
-          animate={{ x: `${target.x}%`, y: `${target.y}%` }}
-          className="absolute -translate-x-1/2 -translate-y-1/2 w-16 h-16 flex items-center justify-center"
+          animate={{ x: `${bladePos.x}%`, y: `${bladePos.y}%` }}
+          className={`absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 transition-opacity ${phase === 'TUBE' ? 'opacity-30' : 'opacity-100'}`}
         >
-          <div className="w-12 h-12 border-2 border-medical-cyan/30 rounded-full animate-ping absolute"></div>
-          <Crosshair className="text-medical-cyan w-8 h-8 opacity-50" />
+          <div className="w-8 h-48 bg-slate-300 rounded-t-full shadow-[0_-20px_40px_rgba(255,255,255,0.5)]"></div>
+          <div className="w-4 h-4 bg-yellow-200 rounded-full -mt-2 mx-auto animate-pulse"></div>
         </motion.div>
 
-        {/* Laryngoscope Blade / ET Tube */}
-        <div
-          className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ left: `${position.x}%`, top: `${position.y}%` }}
-        >
-          <div className="w-4 h-4 bg-white rounded-full shadow-[0_0_15px_white]"></div>
-          <div className="w-1 h-32 bg-gradient-to-t from-white/20 to-white mt-2 mx-auto"></div>
-        </div>
+        {/* ET Tube */}
+        {phase === 'TUBE' && (
+            <motion.div
+                animate={{ x: `${tubePos.x}%`, y: `${tubePos.y}%` }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20"
+            >
+                <div className="w-4 h-96 bg-white/30 border-2 border-white/20 rounded-full backdrop-blur-sm relative overflow-hidden">
+                    <div className="absolute top-0 w-full h-8 bg-blue-400/20"></div>
+                    <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: `${depth}%` }}
+                        className="absolute bottom-0 w-full bg-blue-400/40"
+                    />
+                </div>
+            </motion.div>
+        )}
+
+        {success && (
+            <div className="absolute inset-0 bg-medical-cyan/20 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="text-center">
+                    <CheckCircle2 size={64} className="text-white mx-auto mb-6 animate-bounce" />
+                    <div className="text-4xl font-black text-white italic uppercase tracking-tighter">Placement Confirmed</div>
+                    <div className="text-sm font-bold text-white opacity-60 uppercase mt-2 italic">Bilaterial Breath Sounds Present</div>
+                </div>
+            </div>
+        )}
       </div>
 
-      <div className="w-full max-w-xs">
+      <div className="w-full max-w-sm">
         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
-          <span>Alignment Progress</span>
-          <span className="text-medical-cyan">{Math.floor(alignment)}%</span>
+          <span>Step: {phase === 'BLADE' ? 'Visualize Cords' : 'Advance ET Tube'}</span>
+          <span className="text-medical-cyan">{phase === 'BLADE' ? '0' : Math.floor(depth)}%</span>
         </div>
         <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-          <motion.div className="h-full bg-medical-cyan shadow-[0_0_10px_#00e5ff]" style={{ width: `${alignment}%` }} />
+          <motion.div className="h-full bg-medical-cyan shadow-[0_0_10px_#00e5ff]" style={{ width: `${depth}%` }} />
         </div>
       </div>
     </div>

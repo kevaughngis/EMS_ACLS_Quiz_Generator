@@ -43,7 +43,15 @@ export const DiagnosticsCenter: React.FC<{ onClose: () => void }> = ({ onClose }
         </section>
 
         <section>
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6">Imaging ({scenario?.diagnostics?.imaging?.type || 'Chest X-Ray'})</h3>
+          <div className="flex justify-between items-center mb-6">
+             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest">Imaging ({scenario?.diagnostics?.imaging?.type || 'Chest X-Ray'})</h3>
+             <button
+               onClick={() => setProcedure('RADIOLOGY')}
+               className="text-[8px] font-black text-medical-cyan border border-medical-cyan/30 px-3 py-1 rounded-full hover:bg-medical-cyan/10 transition-all uppercase tracking-widest"
+             >
+               Open Radiology Suite
+             </button>
+          </div>
           <div className="aspect-[4/5] bg-black border border-slate-800 rounded relative overflow-hidden flex items-center justify-center group">
              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
              <div className="text-center p-8">

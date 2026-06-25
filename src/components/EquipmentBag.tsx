@@ -25,7 +25,7 @@ export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => 
            <TabButton active={category === 'AIRWAY'} onClick={() => setCategory('AIRWAY')} icon={<Wind size={16}/>} label="Airway" />
            <TabButton active={category === 'CIRCULATION'} onClick={() => setCategory('CIRCULATION')} icon={<Zap size={16}/>} label="Circulation" />
            <TabButton active={category === 'DRUGS'} onClick={() => setProcedure('PHARMACY')} icon={<Syringe size={16}/>} label="Pharmacy" />
-           <TabButton active={category === 'TRAUMA'} onClick={() => setCategory('TRAUMA')} icon={<Activity size={16}/>} label="Trauma" />
+           <TabButton active={category === 'TRAUMA'} onClick={() => setProcedure('TRAUMA_SUITE')} icon={<Activity size={16}/>} label="Trauma" />
            {useStore.getState().scenario?.protocol === 'PALS' && (
              <TabButton active={false} onClick={() => setProcedure('BROSELOW')} icon={<Ruler size={16}/>} label="Broselow" />
            )}
@@ -44,7 +44,7 @@ export const EquipmentBag: React.FC<{ onClose: () => void }> = ({ onClose }) => 
            )}
            {category === 'CIRCULATION' && (
              <>
-               <InventoryItem label="18G Angiocath" icon={<Zap />} onClick={() => applyAction('IV_START')} />
+               <InventoryItem label="Vascular Access" icon={<Zap />} onClick={() => setProcedure('VASCULAR_ACCESS')} />
                <InventoryItem label="IO Drill" onClick={() => { onClose(); (window as any).startMinigame?.('IO_ACCESS'); }} />
                <InventoryItem label="Normal Saline" onClick={() => applyAction('FLUID_BOLUS')} />
                <InventoryItem label="Pressure Bag" onClick={() => applyAction('FLUID_BOLUS')} />

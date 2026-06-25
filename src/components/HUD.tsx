@@ -25,12 +25,20 @@ import { NeuroAssessment } from './NeuroAssessment';
 import { ABGLab } from './ABGLab';
 import { BroselowToolkit } from './BroselowToolkit';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { LeadershipHub } from './LeadershipHub';
+import { PCRForm } from './PCRForm';
+import { TraumaSuite } from './TraumaSuite';
+import { SceneSizeup } from './SceneSizeup';
+import { VascularAccess } from './VascularAccess';
+import { RadiologySuite } from './RadiologySuite';
 import { ScenarioSandbox } from './ScenarioSandbox';
 import { CPRQualityGauge } from './CPRQualityGauge';
+import { CrisisTroubleshooter } from './CrisisTroubleshooter';
+import { AlgorithmProjector } from './AlgorithmProjector';
 import { ProcedureMinigame } from './ProcedureMinigame';
 import type { MinigameType } from './ProcedureMinigame';
 import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
-import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp, Trophy } from 'lucide-react';
+import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp, Trophy, FileText, Shield, Database, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -42,16 +50,24 @@ function cn(...inputs: ClassValue[]) {
 const HUD = () => {
   const {
     patientState, secondaryPatientState, activePatientIndex, setActivePatient, triagePatient,
-    logs, applyAction, tick, scenario, studyMode, toggleStudyMode, hints, addHint, isSimulating, activeProcedure, setProcedure
+    logs, applyAction, tick, scenario, studyMode, toggleStudyMode, hints, addHint, isSimulating, activeProcedure, setProcedure,
+    activeCrisis, setStore
   } = useStore();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
   const [showTwelveLead, setShowTwelveLead] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [showSandbox, setShowSandbox] = useState(false);
+  const [showSizeup, setShowSizeup] = useState(false);
   const [activeMinigame, setActiveMinigame] = useState<MinigameType | null>(null);
 
   const lastBeepTime = useRef(0);
+
+  useEffect(() => {
+    if (patientState && logs.length === 1) {
+        setShowSizeup(true);
+    }
+  }, [patientState, logs.length]);
 
   useEffect(() => {
     let hintCooldown = 0;
@@ -111,6 +127,33 @@ const HUD = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [patientState, applyAction]);
 
+  const handleAssess = (part: string) => {
+    if (part === 'DEFIBRILLATOR') setProcedure('DEFIB_INTERFACE');
+    else if (part === 'VENTILATOR') setProcedure('VENTILATOR');
+    else if (part === 'IV_PUMP') setProcedure('IV_TITRATION');
+    else applyAction(`ASSESS_${part}`);
+  };
+
+  const currentPatient = activePatientIndex === 0 ? patientState : secondaryPatientState;
+
+  const startMinigame = (type: MinigameType) => {
+    setActiveMinigame(type);
+  };
+
+  useEffect(() => {
+    (window as any).startMinigame = startMinigame;
+    return () => { delete (window as any).startMinigame; };
+  }, []);
+
+  const showAIReview = async () => {
+    setLoadingAI(true);
+    const result = await getScenarioFeedback(scenario?.protocol || 'ACLS', logs);
+    setFeedback(result);
+    setLoadingAI(false);
+  };
+
+  if (showSizeup) return <SceneSizeup onComplete={() => setShowSizeup(false)} />;
+
   if (!patientState) return (
     <div className="flex items-center justify-center h-screen bg-medical-dark overflow-hidden">
       {showSandbox && <ScenarioSandbox onClose={() => setShowSandbox(false)} />}
@@ -166,34 +209,17 @@ const HUD = () => {
     </div>
   );
 
-  const handleAssess = (part: string) => {
-    if (part === 'DEFIBRILLATOR') setProcedure('DEFIB_INTERFACE');
-    else if (part === 'VENTILATOR') setProcedure('VENTILATOR');
-    else if (part === 'IV_PUMP') setProcedure('IV_TITRATION');
-    else applyAction(`ASSESS_${part}`);
-  };
-
-  const currentPatient = activePatientIndex === 0 ? patientState : secondaryPatientState;
-
-  const startMinigame = (type: MinigameType) => {
-    setActiveMinigame(type);
-  };
-
-  useEffect(() => {
-    (window as any).startMinigame = startMinigame;
-    return () => { delete (window as any).startMinigame; };
-  }, []);
-
-  const showAIReview = async () => {
-    setLoadingAI(true);
-    const result = await getScenarioFeedback(scenario?.protocol || 'ACLS', logs);
-    setFeedback(result);
-    setLoadingAI(false);
-  };
-
   return (
     <div className="relative h-screen w-screen overflow-hidden text-white font-sans selection:bg-medical-cyan/30">
       <SimulationView onAssess={handleAssess} />
+
+      <AnimatePresence>
+        {activeCrisis && (
+          <CrisisTroubleshooter onClose={() => setStore({ activeCrisis: null })} />
+        )}
+      </AnimatePresence>
+
+      <AlgorithmProjector />
 
       {/* Triage / Patient Switcher */}
       {secondaryPatientState && (
@@ -260,6 +286,14 @@ const HUD = () => {
             icon={<TrendingUp size={16} />}
           >
             REVIEW
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('PCR_CHART')}
+            variant="success"
+            icon={<FileText size={16} />}
+          >
+            CHART
           </HUDButton>
 
           <HUDButton
@@ -357,6 +391,14 @@ const HUD = () => {
             icon={<Activity size={16} />}
           >
             EXAM
+          </HUDButton>
+
+          <HUDButton
+            onClick={() => setProcedure('LEADERSHIP')}
+            variant="primary"
+            icon={<Shield size={16} />}
+          >
+            TEAM
           </HUDButton>
 
           <HUDButton
@@ -546,6 +588,11 @@ const HUD = () => {
       {activeProcedure === 'ABG_LAB' && <ABGLab onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'BROSELOW' && <BroselowToolkit onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'ANALYTICS' && <AnalyticsDashboard onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'LEADERSHIP' && <LeadershipHub onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'PCR_CHART' && <PCRForm onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'TRAUMA_SUITE' && <TraumaSuite onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'VASCULAR_ACCESS' && <VascularAccess onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'RADIOLOGY' && <RadiologySuite onClose={() => setProcedure('NONE')} />}
 
       <CPRQualityGauge />
 
