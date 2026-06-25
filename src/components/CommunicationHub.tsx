@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Users, History, Info } from 'lucide-react';
+import { MessageCircle, Users, History, Info, Send } from 'lucide-react';
+import { getClinicalChatResponse } from '../engine/GeminiService';
 
 export const CommunicationHub: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { scenario, logs } = useStore();
-  const [activeTab, setActiveTab] = useState<'SAMPLE' | 'OPQRST' | 'BYSTANDER'>('SAMPLE');
+  const { scenario, logs, patientState } = useStore();
+  const [activeTab, setActiveTab] = useState<'SAMPLE' | 'OPQRST' | 'BYSTANDER' | 'CHAT'>('SAMPLE');
 
   const sampleHistory = {
     Symptoms: "Chest pain radiating to left arm",
@@ -23,6 +24,24 @@ export const CommunicationHub: React.FC<{ onClose: () => void }> = ({ onClose })
     Radiation: "Radiates to left jaw and shoulder",
     Severity: "8/10 on pain scale",
     Time: "Began approximately 25 minutes ago"
+  };
+
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<{ role: string, text: string }[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+
+  const handleSendMessage = async () => {
+    if (!chatMessage.trim()) return;
+    const userMsg = chatMessage;
+    setChatMessage('');
+    setChatHistory(prev => [...prev, { role: 'You', text: userMsg }]);
+
+    setIsTyping(true);
+    const context = `Scenario: ${scenario?.title}. Patient is ${patientState?.consciousness}. Rhythm is ${patientState?.rhythm}. Vital signs are HR ${patientState?.vitals.hr}, SpO2 ${patientState?.vitals.spo2}.`;
+    const response = await getClinicalChatResponse("Patient's spouse (worried and anxious)", userMsg, context);
+    setIsTyping(false);
+
+    setChatHistory(prev => [...prev, { role: 'Spouse', text: response }]);
   };
 
   return (
@@ -61,6 +80,13 @@ export const CommunicationHub: React.FC<{ onClose: () => void }> = ({ onClose })
              label="Bystander Report"
              sub="Family & Witnesses"
            />
+           <NavButton
+             active={activeTab === 'CHAT'}
+             onClick={() => setActiveTab('CHAT')}
+             icon={<MessageCircle size={18}/>}
+             label="Direct Dialogue"
+             sub="AI Real-time Chat"
+           />
         </div>
 
         {/* Content Area */}
@@ -98,6 +124,46 @@ export const CommunicationHub: React.FC<{ onClose: () => void }> = ({ onClose })
                     </div>
                   ))}
                </motion.div>
+             )}
+
+             {activeTab === 'CHAT' && (
+                <motion.div
+                  key="chat"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col h-full gap-6"
+                >
+                   <div className="flex-1 bg-black/40 rounded-3xl p-8 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-white/10">
+                      {chatHistory.length === 0 && (
+                        <div className="text-center text-slate-500 italic mt-20">Start a conversation with the spouse or patient.</div>
+                      )}
+                      {chatHistory.map((msg, i) => (
+                        <div key={i} className={`flex flex-col ${msg.role === 'You' ? 'items-end' : 'items-start'}`}>
+                           <div className="text-[10px] font-black uppercase text-slate-500 mb-1">{msg.role}</div>
+                           <div className={`px-5 py-3 rounded-2xl max-w-[80%] text-sm font-medium ${msg.role === 'You' ? 'bg-medical-cyan text-medical-dark' : 'bg-white/5 border border-white/10 text-white'}`}>
+                              {msg.text}
+                           </div>
+                        </div>
+                      ))}
+                      {isTyping && <div className="text-[10px] font-bold text-medical-cyan animate-pulse">Spouse is typing...</div>}
+                   </div>
+
+                   <div className="flex gap-4">
+                      <input
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                        placeholder="Ask a question or give an instruction..."
+                        className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-medical-cyan transition-colors"
+                      />
+                      <button
+                        onClick={handleSendMessage}
+                        className="p-4 bg-medical-cyan text-medical-dark rounded-2xl hover:scale-105 active:scale-95 transition-all"
+                      >
+                         <Send size={20} />
+                      </button>
+                   </div>
+                </motion.div>
              )}
 
              {activeTab === 'BYSTANDER' && (

@@ -11,7 +11,7 @@ interface SimulationViewProps {
 
 const SimulationView: React.FC<SimulationViewProps> = ({ onAssess }) => {
   const applyAction = useStore((state) => state.applyAction);
-  const { team, assignTeamTask } = useStore();
+  const { team, assignTeamTask, secondaryPatientState, activePatientIndex } = useStore();
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
 
   return (
@@ -28,7 +28,14 @@ const SimulationView: React.FC<SimulationViewProps> = ({ onAssess }) => {
         />
 
         <Suspense fallback={null}>
-          <PatientModel onAssess={onAssess} />
+          <group position={activePatientIndex === 1 ? [-2, 0, 0] : [0, 0, 0]} transition-position="3s">
+            <PatientModel onAssess={onAssess} />
+          </group>
+          {secondaryPatientState && (
+            <group position={activePatientIndex === 0 ? [2, 0, 0] : [0, 0, 0]} transition-position="3s">
+               <PatientModel onAssess={onAssess} />
+            </group>
+          )}
           <MedicalRoom
             onEquipmentClick={(type) => applyAction(`INTERACT_${type}`)}
             onTeamClick={(id) => setSelectedMember(id)}

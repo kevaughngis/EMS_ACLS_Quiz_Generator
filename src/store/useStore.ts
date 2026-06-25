@@ -7,7 +7,10 @@ import { SCENARIOS } from '../data/scenarios';
 interface AppState {
   scenario: Scenario | null;
   patientState: PatientState | null;
+  secondaryPatientState: PatientState | null;
+  activePatientIndex: 0 | 1;
   engine: PhysiologyEngine | null;
+  secondaryEngine: PhysiologyEngine | null;
   logs: string[];
   isSimulating: boolean;
   studyMode: boolean;
@@ -26,7 +29,9 @@ interface AppState {
   isSync: boolean;
 
   startScenario: (id: string) => void;
-  applyAction: (action: string) => void;
+  applyAction: (action: string, skipChallenge?: boolean) => void;
+  setActivePatient: (index: 0 | 1) => void;
+  triagePatient: (index: 0 | 1, tag: 'RED' | 'YELLOW' | 'GREEN' | 'BLACK') => void;
   tick: () => void;
   toggleStudyMode: () => void;
 
@@ -44,7 +49,10 @@ export const useStore = create<AppState>()(
     (set, get) => ({
   scenario: null,
   patientState: null,
+  secondaryPatientState: null,
+  activePatientIndex: 0,
   engine: null,
+  secondaryEngine: null,
   logs: [],
   isSimulating: false,
   studyMode: false,
@@ -78,7 +86,7 @@ export const useStore = create<AppState>()(
             progress: { ...progress, xp: progress.xp + 50 },
             logs: [...logs, "Correct dosage calculated! +50 XP"]
         });
-        get().applyAction(activeChallenge.protocolAction);
+        get().applyAction(activeChallenge.protocolAction, true);
     } else {
         set({ logs: [...logs, "Incorrect dosage! High risk of medication error."] });
     }
@@ -98,10 +106,14 @@ export const useStore = create<AppState>()(
     const scenario = SCENARIOS.find(s => s.id === id);
     if (scenario) {
       const engine = new PhysiologyEngine(scenario.initialState);
+      const secondaryEngine = scenario.difficulty === 'HARD' ? new PhysiologyEngine({ ...scenario.initialState, rhythm: 'SBAD' }) : null;
       set({
         scenario,
         engine,
+        secondaryEngine,
         patientState: scenario.initialState,
+        secondaryPatientState: secondaryEngine ? secondaryEngine.update() : null,
+        activePatientIndex: 0,
         logs: [`Scenario started: ${scenario.title}`],
         isSimulating: true,
         studyMode: false
@@ -109,11 +121,18 @@ export const useStore = create<AppState>()(
     }
   },
 
-  applyAction: (action: string) => {
-    const { engine, logs, scenario } = get();
+  setActivePatient: (activePatientIndex) => set({ activePatientIndex }),
+
+  triagePatient: (index, tag) => set(state => ({
+    logs: [...state.logs, `Patient ${index === 0 ? 'A' : 'B'} triaged as ${tag}`]
+  })),
+
+  applyAction: (action: string, skipChallenge: boolean = false) => {
+    const { engine, secondaryEngine, activePatientIndex, logs, scenario } = get();
+    const currentEngine = activePatientIndex === 0 ? engine : secondaryEngine;
 
     // Intercept drugs for PALS/NRP if weight-based math is needed
-    if (action.startsWith('EPINEPHRINE') && (scenario?.protocol === 'PALS' || scenario?.protocol === 'NRP')) {
+    if (!skipChallenge && action.startsWith('EPINEPHRINE') && (scenario?.protocol === 'PALS' || scenario?.protocol === 'NRP')) {
         const weight = scenario.patientWeight || 10;
         const dose = +(weight * 0.01).toFixed(2);
         set({ activeChallenge: {
@@ -126,17 +145,23 @@ export const useStore = create<AppState>()(
         return;
     }
 
-    if (engine) {
-      engine.applyIntervention(action);
-      set({ logs: [...logs, `Applied: ${action}`] });
+    if (currentEngine) {
+      currentEngine.applyIntervention(action);
+      set({ logs: [...logs, `Patient ${activePatientIndex === 0 ? 'A' : 'B'}: Applied ${action}`] });
     }
   },
 
   tick: () => {
-    const { engine, isSimulating } = get();
-    if (engine && isSimulating) {
-      const newState = engine.update();
-      set({ patientState: { ...newState } });
+    const { engine, secondaryEngine, isSimulating } = get();
+    if (isSimulating) {
+        if (engine) {
+            const newState = engine.update();
+            set({ patientState: { ...newState } });
+        }
+        if (secondaryEngine) {
+            const newState = secondaryEngine.update();
+            set({ secondaryPatientState: { ...newState } });
+        }
     }
   },
 
