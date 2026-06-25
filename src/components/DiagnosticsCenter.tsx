@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../store/useStore';
 
 export const DiagnosticsCenter: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const scenario = useStore(state => state.scenario);
+  const { scenario, setProcedure } = useStore();
 
   const mockLabs = scenario?.diagnostics?.labs || {
     ph: (7.35 + Math.random() * 0.1).toFixed(2),
@@ -23,7 +23,15 @@ export const DiagnosticsCenter: React.FC<{ onClose: () => void }> = ({ onClose }
 
       <div className="grid grid-cols-2 gap-12">
         <section>
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6">Laboratory Results</h3>
+          <div className="flex justify-between items-center mb-6">
+             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest">Laboratory Results</h3>
+             <button
+               onClick={() => setProcedure('ABG_LAB')}
+               className="text-[8px] font-black text-medical-yellow border border-medical-yellow/30 px-3 py-1 rounded-full hover:bg-medical-yellow/10 transition-all uppercase tracking-widest"
+             >
+               Open ABG Interpreter
+             </button>
+          </div>
           <div className="space-y-4 font-mono">
             {Object.entries(mockLabs).map(([key, val]) => (
               <div key={key} className="flex justify-between border-b border-slate-900 pb-2">

@@ -20,7 +20,7 @@ interface AppState {
   team: TeamMember[];
   progress: UserProgress;
   activeChallenge: CalculationChallenge | null;
-  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION';
+  activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW';
   hints: string[];
 
   // Defib State
@@ -39,7 +39,7 @@ interface AppState {
   setEnvironment: (env: EnvironmentType) => void;
   assignTeamTask: (memberId: string, task: string) => void;
   solveChallenge: (answer: number) => void;
-  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION') => void;
+  setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW') => void;
   addXP: (amount: number) => void;
   addHint: (hint: string) => void;
 }
