@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { PatientState, Scenario, TeamMember, UserProgress, EnvironmentType, CalculationChallenge } from '../types';
 import { PhysiologyEngine } from '../engine/PhysiologyEngine';
 import { SCENARIOS } from '../data/scenarios';
+import { soundEngine } from '../engine/SoundEngine';
 
 interface AppState {
   scenario: Scenario | null;
@@ -23,6 +24,8 @@ interface AppState {
   activeProcedure: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW' | 'LEADERSHIP' | 'PCR_CHART' | 'TRAUMA_SUITE' | 'VASCULAR_ACCESS' | 'RADIOLOGY' | 'ALGORITHM_AR' | 'CRISIS_FIX' | 'MATERNAL_SUITE' | 'TCCC_SUITE' | 'TOXIDROME_LAB' | 'FLIGHT_DECK' | 'CARDIOLOGY_SUITE' | 'CBRNE_SUITE' | 'BURN_SUITE';
   hints: string[];
   activeCrisis: { id: string, label: string, description: string } | null;
+  theme: 'CLINICAL' | 'TACTICAL' | 'EMERGENCY';
+  floatingEvents: { id: number, text: string, pos: [number, number, number] }[];
 
   // Defib State
   defibEnergy: number;
@@ -43,6 +46,7 @@ interface AppState {
   setProcedure: (proc: 'NONE' | 'INTUBATION' | 'IO' | 'HANDOVER' | 'DEFIB_INTERFACE' | 'HISTORY' | 'EQUIPMENT' | 'VITALS_TRENDS' | 'CAREER' | 'PHYSICAL_EXAM' | 'VENTILATOR' | 'PHARMACY' | 'POCUS' | 'CONSULT' | 'PROTOCOL_TABLET' | 'IV_TITRATION' | 'NEURO_EXAM' | 'ABG_LAB' | 'ANALYTICS' | 'BROSELOW' | 'LEADERSHIP' | 'PCR_CHART' | 'TRAUMA_SUITE' | 'VASCULAR_ACCESS' | 'RADIOLOGY' | 'ALGORITHM_AR' | 'CRISIS_FIX' | 'MATERNAL_SUITE' | 'TCCC_SUITE' | 'TOXIDROME_LAB' | 'FLIGHT_DECK' | 'CARDIOLOGY_SUITE' | 'CBRNE_SUITE' | 'BURN_SUITE') => void;
   addXP: (amount: number) => void;
   addHint: (hint: string) => void;
+  speak: (text: string, voiceType?: 'TEAM' | 'PATIENT' | 'SYSTEM') => void;
   setStore: (partial: Partial<AppState>) => void;
 }
 
@@ -69,6 +73,8 @@ export const useStore = create<AppState>()(
   activeProcedure: 'NONE',
   hints: [],
   activeCrisis: null,
+  theme: 'CLINICAL',
+  floatingEvents: [],
 
   setStore: (partial) => set(state => ({ ...state, ...partial })),
 
@@ -109,7 +115,14 @@ export const useStore = create<AppState>()(
     return { progress: { ...state.progress, xp: newXP, level: newLevel } };
   }),
 
-  addHint: (hint) => set(state => ({ hints: [hint, ...state.hints].slice(0, 5) })),
+  addHint: (hint) => {
+    set(state => ({ hints: [hint, ...state.hints].slice(0, 5) }));
+    get().speak(hint, 'SYSTEM');
+  },
+
+  speak: (text, voiceType = 'TEAM') => {
+    soundEngine.speak(text, voiceType);
+  },
 
   startScenario: (id: string) => {
     let scenario = SCENARIOS.find(s => s.id === id);
@@ -164,7 +177,20 @@ export const useStore = create<AppState>()(
 
     if (currentEngine) {
       currentEngine.applyIntervention(action);
-      set({ logs: [...logs, `Patient ${activePatientIndex === 0 ? 'A' : 'B'}: Applied ${action}`] });
+      const log = `Patient ${activePatientIndex === 0 ? 'A' : 'B'}: Applied ${action}`;
+      const eventId = Date.now();
+      const patientOffset = activePatientIndex === 1 ? -2 : 0;
+
+      set((state) => ({
+        logs: [...state.logs, log],
+        floatingEvents: [...state.floatingEvents, { id: eventId, text: action, pos: [patientOffset, 1.5, 0] }]
+      }));
+
+      get().speak(log);
+
+      setTimeout(() => {
+        set(state => ({ floatingEvents: state.floatingEvents.filter(e => e.id !== eventId) }));
+      }, 3000);
     }
   },
 

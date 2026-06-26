@@ -91,6 +91,35 @@ class SoundEngine {
   setMuted(muted: boolean) {
     this.isMuted = muted;
   }
+
+  speak(text: string, voiceType: 'TEAM' | 'PATIENT' | 'SYSTEM' = 'TEAM') {
+    if (this.isMuted || !window.speechSynthesis) return;
+
+    // Cancel existing speech to avoid overlap pile-ups in fast scenarios
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // Attempt to select distinct voices if available
+    const voices = window.speechSynthesis.getVoices();
+
+    switch (voiceType) {
+      case 'TEAM':
+        utterance.pitch = 1.0;
+        utterance.rate = 1.1;
+        break;
+      case 'PATIENT':
+        utterance.pitch = 0.8;
+        utterance.rate = 0.9;
+        break;
+      case 'SYSTEM':
+        utterance.pitch = 1.2;
+        utterance.rate = 1.0;
+        break;
+    }
+
+    window.speechSynthesis.speak(utterance);
+  }
 }
 
 export const soundEngine = new SoundEngine();
