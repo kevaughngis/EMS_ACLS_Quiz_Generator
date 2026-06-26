@@ -1,0 +1,95 @@
+Navigating to app...
+Page loaded.
+Selected Protocol.
+Arrived on scene.
+Clicked sizeup: BSI / SCENE SAFETY
+Clicked sizeup: MOI / NOI DETERMINATION
+Clicked sizeup: NUMBER OF PATIENTS
+Clicked sizeup: ADDITIONAL RESOURCES (ALS)
+Patient contact established.
+--- Processing REVIEW ---
+Opened REVIEW via JS click
+Captured verification/gallery/01_review.png
+Closed REVIEW with Return to Simulation
+--- Processing CHART ---
+Opened CHART via JS click
+Captured verification/gallery/02_chart.png
+Closed CHART with Close
+--- Processing STUDY MODE ---
+Opened STUDY MODE via JS click
+Captured verification/gallery/03_study_mode.png
+Closed STUDY MODE with Escape
+--- Processing HANDOVER ---
+Opened HANDOVER via JS click
+Captured verification/gallery/04_handover.png
+Closed HANDOVER with Escape
+--- Processing 12-LEAD ---
+Opened 12-LEAD via JS click
+Captured verification/gallery/05_12-lead.png
+Closed 12-LEAD with Close
+--- Processing DIAGS ---
+Opened DIAGS via JS click
+Captured verification/gallery/06_diags.png
+Closed DIAGS with ✕
+--- Processing POCUS ---
+Opened POCUS via JS click
+Captured verification/gallery/07_pocus.png
+Closed POCUS with Close
+--- Processing CONSULT ---
+Opened CONSULT via JS click
+Captured verification/gallery/08_consult.png
+Closed CONSULT with Escape
+--- Processing GUIDE ---
+Opened GUIDE via JS click
+Captured verification/gallery/09_guide.png
+Closed GUIDE with ✕
+--- Processing TRENDS ---
+Opened TRENDS via JS click
+Captured verification/gallery/10_trends.png
+Closed TRENDS with ✕
+--- Processing BAG ---
+Opened BAG via JS click
+Captured verification/gallery/11_bag.png
+Closed BAG with Close
+--- Processing HISTORY ---
+Opened HISTORY via JS click
+Captured verification/gallery/12_history.png
+Closed HISTORY with ✕
+--- Processing EXAM ---
+Opened EXAM via JS click
+Captured verification/gallery/13_exam.png
+Closed EXAM with ✕
+--- Processing TEAM ---
+Opened TEAM via JS click
+Captured verification/gallery/14_team.png
+Closed TEAM with Close
+--- Processing RADIOLOGY ---
+Opened RADIOLOGY via JS click
+Captured verification/gallery/15_radiology.png
+Closed RADIOLOGY with Return to Simulation
+--- Processing VASCULAR ---
+Opened VASCULAR via JS click
+Captured verification/gallery/16_vascular.png
+Closed VASCULAR with ✕
+--- Processing MATERNAL ---
+Opened MATERNAL via JS click
+Captured verification/gallery/17_maternal.png
+Closed MATERNAL with Return to Mission
+--- Processing TCCC ---
+Opened TCCC via JS click
+Captured verification/gallery/18_tccc.png
+Closed TCCC with Back to Zone
+--- Processing TOX ---
+Opened TOX via JS click
+Captured verification/gallery/19_tox.png
+Closed TOX with Escape
+--- Processing FLIGHT ---
+Could not find button with text FLIGHT
+--- Processing CARDIOLOGY ---
+Could not find button with text CARDIOLOGY
+--- Processing CBRNE ---
+Could not find button with text CBRNE
+--- Processing BURN ---
+Could not find button with text BURN
+--- Processing CAREER ---
+Could not find button with text CAREER

@@ -12,6 +12,12 @@ export const DiagnosticsCenter: React.FC<{ onClose: () => void }> = ({ onClose }
     lactate: (0.5 + Math.random() * 2).toFixed(1),
     troponin: (Math.random() > 0.7 ? 0.45 : 0.01).toFixed(2),
     potassium: (3.5 + Math.random() * 1.5).toFixed(1),
+    wbc: (4.5 + Math.random() * 10).toFixed(1),
+    hgb: (12 + Math.random() * 4).toFixed(1),
+    plt: Math.floor(150 + Math.random() * 200),
+    sodium: Math.floor(135 + Math.random() * 10),
+    creatinine: (0.7 + Math.random() * 0.5).toFixed(2),
+    inr: (1.0 + Math.random() * 0.5).toFixed(1),
   };
 
   return (

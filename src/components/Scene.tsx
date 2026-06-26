@@ -9,7 +9,7 @@ interface PatientModelProps {
 }
 
 export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
-  const { patientState, activePatientIndex, secondaryPatientState } = useStore();
+  const { patientState, activePatientIndex, secondaryPatientState, scenario } = useStore();
   const [hovered, setHovered] = useState<string | null>(null);
   const chestRef = useRef<THREE.Group>(null);
 
@@ -47,13 +47,36 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
       {/* Torso & Chest Interaction Zone */}
       <group ref={chestRef}>
         <mesh
-          onPointerOver={() => setHovered('CHEST')}
+          onPointerOver={(e) => { e.stopPropagation(); setHovered('CHEST'); }}
           onPointerOut={() => setHovered(null)}
-          onClick={() => onAssess('CHEST')}
+          onClick={(e) => { e.stopPropagation(); onAssess('CHEST'); }}
           castShadow
         >
           <boxGeometry args={[1.0, 0.5, 1.4]} />
-          <meshStandardMaterial {...gownMat} color={hovered === 'CHEST' ? '#bfdbfe' : '#93c5fd'} />
+          <meshStandardMaterial {...gownMat} transparent opacity={0.9} color={hovered === 'CHEST' ? '#bfdbfe' : '#93c5fd'} />
+        </mesh>
+
+        {/* Specialized Hotspots - Hidden but interactive */}
+        {/* Fundus (OB) */}
+        <mesh
+          position={[0, 0.3, -0.4]}
+          onPointerOver={(e) => { e.stopPropagation(); setHovered('OB_FUNDUS'); }}
+          onPointerOut={() => setHovered(null)}
+          onClick={(e) => { e.stopPropagation(); onAssess('OB_FUNDUS'); }}
+        >
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshStandardMaterial color="red" transparent opacity={hovered === 'OB_FUNDUS' ? 0.3 : 0} />
+        </mesh>
+
+        {/* Pericardium (Cardiology) */}
+        <mesh
+          position={[0, 0.3, 0.2]}
+          onPointerOver={(e) => { e.stopPropagation(); setHovered('HEART_SITE'); }}
+          onPointerOut={() => setHovered(null)}
+          onClick={(e) => { e.stopPropagation(); onAssess('HEART_SITE'); }}
+        >
+          <sphereGeometry args={[0.12, 16, 16]} />
+          <meshStandardMaterial color="pink" transparent opacity={hovered === 'HEART_SITE' ? 0.3 : 0} />
         </mesh>
       </group>
 
