@@ -40,7 +40,9 @@ export type RhythmType =
   | 'PPH'
   | 'ECLAMPSIA'
   | 'WELLENS'
-  | 'DE_WINTER';
+  | 'DE_WINTER'
+  | 'PACED'
+  | 'TAMPONADE';
 
 export interface LeadMorphology {
   lead: string;
