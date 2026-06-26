@@ -157,18 +157,49 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
           <meshStandardMaterial {...gownMat} />
       </mesh>
 
-      {/* Legs */}
+      {/* Detailed Legs with Articulated Look */}
       <group position={[-0.3, -0.05, -1.5]}>
-         <mesh castShadow>
-            <capsuleGeometry args={[0.15, 1.5, 4, 16]} />
-            <meshStandardMaterial color="#1e293b" />
+         {/* Thigh */}
+         <group position={[0, 0.05, 0.5]}>
+            <mesh castShadow>
+               <capsuleGeometry args={[0.16, 0.7, 4, 16]} />
+               <meshStandardMaterial color="#1e293b" />
+            </mesh>
+         </group>
+         {/* Knee Joint */}
+         <mesh position={[0, 0.05, 0.1]}>
+             <sphereGeometry args={[0.14, 16, 16]} />
+             <meshStandardMaterial color="#0f172a" />
          </mesh>
+         {/* Lower Leg */}
+         <group position={[0, 0.05, -0.4]} rotation={[0.1, 0, 0]}>
+            <mesh castShadow>
+               <capsuleGeometry args={[0.14, 0.7, 4, 16]} />
+               <meshStandardMaterial color="#1e293b" />
+            </mesh>
+         </group>
       </group>
+
       <group position={[0.3, -0.05, -1.5]}>
-         <mesh castShadow>
-            <capsuleGeometry args={[0.15, 1.5, 4, 16]} />
-            <meshStandardMaterial color="#1e293b" />
+         {/* Thigh */}
+         <group position={[0, 0.05, 0.5]}>
+            <mesh castShadow>
+               <capsuleGeometry args={[0.16, 0.7, 4, 16]} />
+               <meshStandardMaterial color="#1e293b" />
+            </mesh>
+         </group>
+         {/* Knee Joint */}
+         <mesh position={[0, 0.05, 0.1]}>
+             <sphereGeometry args={[0.14, 16, 16]} />
+             <meshStandardMaterial color="#0f172a" />
          </mesh>
+         {/* Lower Leg */}
+         <group position={[0, 0.05, -0.4]} rotation={[0.1, 0, 0]}>
+            <mesh castShadow>
+               <capsuleGeometry args={[0.14, 0.7, 4, 16]} />
+               <meshStandardMaterial color="#1e293b" />
+            </mesh>
+         </group>
       </group>
 
       {/* Interaction Labels */}
@@ -419,14 +450,34 @@ export const MedicalRoom = ({
           </Box>
       </group>
 
-      {/* IV Infusion Pump */}
+      {/* High-Fidelity IV Infusion Pump System */}
       <group position={[1.5, 0, 0.8]}>
           <Cylinder args={[0.03, 0.03, 2.5]} position={[0, 1.25, 0]} castShadow>
               <meshStandardMaterial color="#cbd5e1" metalness={1} />
           </Cylinder>
-          <Box args={[0.2, 0.4, 0.2]} position={[0, 1.8, 0]} onClick={() => onEquipmentClick('IV_PUMP')}>
-              <meshStandardMaterial color="#e2e8f0" />
-          </Box>
+          <group position={[0, 1.6, 0]} onClick={() => onEquipmentClick('IV_PUMP')}>
+              {/* Pump Housing */}
+              <Box args={[0.25, 0.5, 0.25]}>
+                  <meshStandardMaterial color="#f8fafc" />
+              </Box>
+              {/* Pump Display */}
+              <Box args={[0.18, 0.12, 0.01]} position={[0, 0.1, 0.13]}>
+                  <meshStandardMaterial color="#000" emissive="#0ea5e9" emissiveIntensity={0.4} />
+              </Box>
+              {/* Dial/Control */}
+              <Cylinder args={[0.04, 0.04, 0.03]} position={[0, -0.1, 0.13]} rotation={[Math.PI/2, 0, 0]}>
+                  <meshStandardMaterial color="#64748b" />
+              </Cylinder>
+          </group>
+          {/* IV Bag Hanging */}
+          <group position={[0.1, 2.2, 0]}>
+              <Box args={[0.15, 0.3, 0.05]} radius={0.05}>
+                  <meshStandardMaterial color="#fff" transparent opacity={0.4} />
+              </Box>
+              <Cylinder args={[0.01, 0.01, 0.2]} position={[0, -0.2, 0]}>
+                  <meshStandardMaterial color="#fff" />
+              </Cylinder>
+          </group>
       </group>
 
       {/* High-Fidelity Ventilator Station */}

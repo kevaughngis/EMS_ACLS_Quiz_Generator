@@ -3,7 +3,16 @@ import type { PatientState } from '../types';
 export class PhysiologyEngine {
   private state: PatientState;
   private lastUpdate: number;
-  private drugs: Map<string, any> = new Map();
+  private drugs: Map<string, {
+    central: number,
+    peripheral: number,
+    halfLife: number,
+    alpha: number,
+    beta1: number,
+    beta2: number,
+    k12: number,
+    k21: number
+  }> = new Map();
   private oxygen: number = 100;
   private ph: number = 7.4;
   private potassium: number = 4.0;
@@ -32,13 +41,30 @@ export class PhysiologyEngine {
 
   private processKinetics(dt: number) {
     this.drugs.forEach((d, k) => {
-      d.concentration *= Math.exp(-(Math.LN2 / d.halfLife) * dt);
-      if (d.concentration < 0.001) this.drugs.delete(k);
+      // 2-Compartment Model ODE Approximation
+      const centralToPeripheral = d.central * d.k12 * dt;
+      const peripheralToCentral = d.peripheral * d.k21 * dt;
+      const elimination = d.central * (Math.LN2 / d.halfLife) * dt;
+
+      d.central += peripheralToCentral - centralToPeripheral - elimination;
+      d.peripheral += centralToPeripheral - peripheralToCentral;
+
+      if (d.central + d.peripheral < 0.001) this.drugs.delete(k);
     });
   }
 
   private simulate(dt: number) {
     const { vitals, rhythm } = this.state;
+
+    // Gas Physics - Boyle's & Dalton's Laws
+    // Atmospheric pressure P(h) = P0 * (1 - L*h/T0)^(g*M/(R*L))
+    const pAtmSeaLevel = 760; // mmHg
+    const pAtm = pAtmSeaLevel * Math.pow(1 - 0.0000065 * this.altitude / 288.15, 5.255);
+    const pO2_Ambient = pAtm * 0.21; // Dalton's Law: Partial pressure of Oxygen
+
+    // Boyle's Law: P1V1 = P2V2 => V2 = V1 * (P1/P2)
+    // As altitude increases, gas volume expands.
+    const volumeExpansionFactor = pAtmSeaLevel / pAtm;
 
     // Maternal High-Stakes Logic
     if (rhythm === 'PPH') {
@@ -54,39 +80,45 @@ export class PhysiologyEngine {
     // CBRNE / Nerve Agent Logic (SLUDGEM)
     if (this.acetylcholinesterase < 50) {
         const severity = (100 - this.acetylcholinesterase) / 100;
-        this.oxygen -= dt * 5.0 * severity; // Bronchoconstriction/Secretions
-        vitals.hr -= dt * 30 * severity; // Bradycardia
+        this.oxygen -= dt * 5.0 * severity;
+        vitals.hr -= dt * 30 * severity;
         this.ph -= dt * 0.05 * severity;
     }
 
     // Burn Fluid Shifts
     if (this.burnTBSA > 0) {
-        this.volume -= dt * (this.burnTBSA / 100) * 0.05; // Evaporative/Capillary leak loss
+        this.volume -= dt * (this.burnTBSA / 100) * 0.05;
     }
 
-    // 1. Vasoactive/Inotropic Influences
+    // 1. Vasoactive/Inotropic Influences (from Central Compartment)
     let alpha1 = 0, beta1 = 0, beta2 = 0;
     this.drugs.forEach(d => {
-      alpha1 += d.alpha * d.concentration;
-      beta1 += d.beta1 * d.concentration;
-      beta2 += d.beta2 * d.concentration;
+      alpha1 += d.alpha * d.central;
+      beta1 += d.beta1 * d.central;
+      beta2 += d.beta2 * d.central;
     });
 
-    // 2. Cardiac Output & MAP
-    const eff = this.getEfficiency(rhythm);
+    // 2. Cardiac Output & MAP (Frank-Starling & SVR)
+    const rhythmEff = this.getEfficiency(rhythm);
+
+    // Frank-Starling Law: Stroke volume increases with preload (volume) up to a point
+    // Simplified as a curve SV = V / (1 + V/K)
+    const baseSV = 70;
+    const preloadFactor = (this.volume / 5.0);
+    const frankStarling = preloadFactor < 1.2 ? preloadFactor : 1.2 - (preloadFactor - 1.2) * 0.5;
+
     const targetHr = (this.getBaseHr(rhythm) + beta1 * 40) * (this.ph < 7.1 ? 0.6 : 1.0);
     vitals.hr += (targetHr - vitals.hr) * dt * 0.4;
 
-    const sv = (60 + beta2 * 20) * eff * (this.oxygen / 100) * (this.volume / 5);
+    const sv = baseSV * frankStarling * (1 + beta2 * 0.3) * rhythmEff;
     vitals.co = (vitals.hr * sv) / 1000;
 
-    const svr = 1200 + alpha1 * 800;
+    const baseSVR = 1200;
+    const svr = baseSVR + alpha1 * 1000; // Vasoconstriction increases SVR
+
+    // MAP = CO * SVR / 80 (approx)
     const targetMap = (vitals.co * svr) / 80;
     vitals.map += (targetMap - vitals.map) * dt * 0.2;
-
-    // Flight Physiology (Boyle's Law & Dalton's Law mock)
-    const pressureRatio = Math.max(0.5, 1 - (this.altitude / 50000));
-    const fio2Base = 21 * pressureRatio;
 
     // 3. Respiratory & Metabolic
     const isArrest = ['VF', 'ASYSTOLE', 'PEA'].includes(rhythm);
@@ -94,15 +126,24 @@ export class PhysiologyEngine {
       this.oxygen -= dt * 2.5;
       this.ph -= dt * 0.02;
     } else {
-      const vent = (vitals.rr / 12) * (this.state.airway === 'CLEAR' ? 1 : 0.1);
-      const oxyTarget = Math.min(100, (fio2Base / 21) * 100);
-      this.oxygen += (oxyTarget - this.oxygen) * dt * 0.3 * (vent + (isArrest ? 0.2 : 0));
-      this.ph += (7.4 - this.ph) * dt * 0.1 * vent;
+      const ventRate = vitals.rr;
+      const airwayResist = this.state.airway === 'CLEAR' ? 1.0 : 0.2;
+
+      // Effective Alveolar Ventilation
+      const alvVent = (ventRate / 12) * airwayResist;
+
+      // Dalton's Law influence on SpO2
+      // SpO2 target decreases as ambient pO2 drops with altitude
+      const oxyTarget = Math.min(100, (pO2_Ambient / 159) * 100);
+      this.oxygen += (oxyTarget - this.oxygen) * dt * 0.3 * (alvVent + (isArrest ? 0.2 : 0));
+      this.ph += (7.4 - this.ph) * dt * 0.1 * alvVent;
     }
 
-    // Tension Pneumothorax Expansion at Altitude
-    if (this.state.breathing === 'PNEUMOTHORAX' && this.altitude > 5000) {
-        this.oxygen -= dt * (this.altitude / 10000); // Gas expansion restricts lung further
+    // Tension Pneumothorax Expansion (Boyle's Law)
+    if (this.state.breathing === 'PNEUMOTHORAX') {
+        const expansionPressure = (volumeExpansionFactor - 1.0) * 5;
+        vitals.map -= dt * expansionPressure; // Mediastinal shift / restricted venous return
+        this.oxygen -= dt * volumeExpansionFactor * 2;
     }
 
     this.cumulativeCPR = Math.max(0, this.cumulativeCPR - dt * 0.5);
@@ -159,10 +200,10 @@ export class PhysiologyEngine {
 
   public applyIntervention(type: string) {
     switch (type) {
-      case 'EPINEPHRINE': this.addDrug('Epi', 180, 1.0, 1.0, 0.5); break;
-      case 'AMIODARONE': this.addDrug('Amio', 900, -0.2, -0.4, 0); break;
-      case 'ATROPINE': this.addDrug('Atropine', 120, 0, 1.5, 0); break;
-      case 'ADENOSINE': this.addDrug('Adenosine', 6, 0, -2.0, 0); break;
+      case 'EPINEPHRINE': this.addDrug('Epi', 180, 1.0, 1.0, 0.5, 0.5, 0.2); break;
+      case 'AMIODARONE': this.addDrug('Amio', 900, -0.2, -0.4, 0, 0.1, 0.05); break;
+      case 'ATROPINE': this.addDrug('Atropine', 120, 0, 1.5, 0, 0.3, 0.1); break;
+      case 'ADENOSINE': this.addDrug('Adenosine', 6, 0, -2.0, 0, 0.8, 0.8); break;
       case 'NARCAN': this.oxygen = Math.min(100, this.oxygen + 30); break;
       case 'DEXTROSE': this.ph = Math.min(7.45, this.ph + 0.05); break;
       case 'CPR_COMPRESSION': this.cumulativeCPR = 1.0; break;
@@ -189,14 +230,14 @@ export class PhysiologyEngine {
       case 'DESCEND': this.altitude = Math.max(0, this.altitude - 1000); break;
       case 'EXPOSURE_NERVE_AGENT': this.acetylcholinesterase = 10; break;
       case 'PRALIDOXIME_2PAM': this.acetylcholinesterase = Math.min(100, this.acetylcholinesterase + 40); break;
-      case 'ATROPINE_CBRNE': this.addDrug('Atropine', 120, 0, 1.5, 0); break;
+      case 'ATROPINE_CBRNE': this.addDrug('Atropine', 120, 0, 1.5, 0, 0.3, 0.1); break;
       case 'BURN_INITIALIZE': this.burnTBSA = 30; break;
       case 'FLUID_BOLUS_250': this.volume = Math.min(6.0, this.volume + 0.25); break;
     }
   }
 
-  private addDrug(name: string, hl: number, a: number, b1: number, b2: number) {
-    this.drugs.set(name, { concentration: 1.0, halfLife: hl, alpha: a, beta1: b1, beta2: b2 });
+  private addDrug(name: string, hl: number, a: number, b1: number, b2: number, k12 = 0.2, k21 = 0.1) {
+    this.drugs.set(name, { central: 1.0, peripheral: 0, halfLife: hl, alpha: a, beta1: b1, beta2: b2, k12, k21 });
   }
 
   private shock() {
