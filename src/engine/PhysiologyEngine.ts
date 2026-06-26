@@ -12,6 +12,8 @@ export class PhysiologyEngine {
   private cumulativeCPR: number = 0;
   private uterineTone: number = 100; // 0 to 100
   private seizureActivity: number = 0; // 0 to 1
+  private acetylcholinesterase: number = 100; // 0 to 100 (for Nerve Agents)
+  private burnTBSA: number = 0;
 
   constructor(initialState: PatientState) {
     this.state = JSON.parse(JSON.stringify(initialState));
@@ -47,6 +49,19 @@ export class PhysiologyEngine {
         this.seizureActivity = Math.min(1, this.seizureActivity + dt * 0.2);
         this.oxygen -= dt * 3.0 * this.seizureActivity;
         vitals.hr += dt * 20 * this.seizureActivity;
+    }
+
+    // CBRNE / Nerve Agent Logic (SLUDGEM)
+    if (this.acetylcholinesterase < 50) {
+        const severity = (100 - this.acetylcholinesterase) / 100;
+        this.oxygen -= dt * 5.0 * severity; // Bronchoconstriction/Secretions
+        vitals.hr -= dt * 30 * severity; // Bradycardia
+        this.ph -= dt * 0.05 * severity;
+    }
+
+    // Burn Fluid Shifts
+    if (this.burnTBSA > 0) {
+        this.volume -= dt * (this.burnTBSA / 100) * 0.05; // Evaporative/Capillary leak loss
     }
 
     // 1. Vasoactive/Inotropic Influences
@@ -172,6 +187,11 @@ export class PhysiologyEngine {
       case 'PELVIC_SLING': this.volume += 0.15; break;
       case 'ASCEND': this.altitude = Math.min(30000, this.altitude + 1000); break;
       case 'DESCEND': this.altitude = Math.max(0, this.altitude - 1000); break;
+      case 'EXPOSURE_NERVE_AGENT': this.acetylcholinesterase = 10; break;
+      case 'PRALIDOXIME_2PAM': this.acetylcholinesterase = Math.min(100, this.acetylcholinesterase + 40); break;
+      case 'ATROPINE_CBRNE': this.addDrug('Atropine', 120, 0, 1.5, 0); break;
+      case 'BURN_INITIALIZE': this.burnTBSA = 30; break;
+      case 'FLUID_BOLUS_250': this.volume = Math.min(6.0, this.volume + 0.25); break;
     }
   }
 

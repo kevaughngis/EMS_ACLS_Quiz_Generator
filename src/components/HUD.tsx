@@ -40,10 +40,12 @@ import { TCCCSuite } from './TCCCSuite';
 import { ToxidromeLab } from './ToxidromeLab';
 import { FlightDeck } from './FlightDeck';
 import { CardiologySuite } from './CardiologySuite';
+import { CBRNESuite } from './CBRNESuite';
+import { BurnSuite } from './BurnSuite';
 import { ProcedureMinigame } from './ProcedureMinigame';
 import type { MinigameType } from './ProcedureMinigame';
 import { getScenarioFeedback, getLiveCoachingHint } from '../engine/GeminiService';
-import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp, Trophy, FileText, Shield, Database, Phone, Baby, Crosshair, Plane } from 'lucide-react';
+import { Activity, Heart, Wind, Zap, Thermometer, FlaskConical, ClipboardList, BookOpen, MessageSquare, AlertCircle, Share2, Grid3X3, Microscope, Briefcase, MessageCircle, TrendingUp, Trophy, FileText, Shield, Database, Phone, Baby, Crosshair, Plane, Flame, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -64,15 +66,23 @@ const HUD = () => {
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [showSandbox, setShowSandbox] = useState(false);
   const [showSizeup, setShowSizeup] = useState(false);
+  const [sizeupDone, setSizeupDone] = useState(false);
   const [activeMinigame, setActiveMinigame] = useState<MinigameType | null>(null);
 
   const lastBeepTime = useRef(0);
 
   useEffect(() => {
-    if (patientState && logs.length === 1) {
+    if (patientState && logs.length === 1 && !sizeupDone) {
         setShowSizeup(true);
+        setSizeupDone(true);
     }
-  }, [patientState, logs.length]);
+  }, [patientState, logs.length, sizeupDone]);
+
+  useEffect(() => {
+    if (!patientState) {
+      setSizeupDone(false);
+    }
+  }, [patientState]);
 
   useEffect(() => {
     let hintCooldown = 0;
@@ -136,6 +146,8 @@ const HUD = () => {
     if (part === 'DEFIBRILLATOR') setProcedure('DEFIB_INTERFACE');
     else if (part === 'VENTILATOR') setProcedure('VENTILATOR');
     else if (part === 'IV_PUMP') setProcedure('IV_TITRATION');
+    else if (part === 'OB_FUNDUS') setProcedure('MATERNAL_SUITE');
+    else if (part === 'HEART_SITE') setProcedure('CARDIOLOGY_SUITE');
     else applyAction(`ASSESS_${part}`);
   };
 
@@ -273,9 +285,9 @@ const HUD = () => {
       <motion.div
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-40"
+        className="absolute top-0 left-0 right-0 p-6 flex justify-between items-start z-40 pointer-events-none"
       >
-        <div className="flex gap-4">
+        <div className="flex gap-4 pointer-events-auto">
             <div className="p-3 bg-medical-dark/80 backdrop-blur-md rounded-xl border border-white/10 shadow-xl">
                 <h1 className="text-2xl font-black text-medical-cyan tracking-tighter uppercase italic leading-none">
                     ACLS <span className="text-white opacity-50 font-light">SIM</span>
@@ -284,175 +296,32 @@ const HUD = () => {
             </div>
         </div>
 
-        <div className="flex gap-3 items-center">
-          <HUDButton
-            onClick={() => setProcedure('ANALYTICS')}
-            variant="success"
-            icon={<TrendingUp size={16} />}
-          >
-            REVIEW
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('PCR_CHART')}
-            variant="success"
-            icon={<FileText size={16} />}
-          >
-            CHART
-          </HUDButton>
-
-          <HUDButton
-            onClick={showAIReview}
-            isLoading={loadingAI}
-            variant="success"
-            icon={<MessageSquare size={16} />}
-          >
-            {loadingAI ? 'ANALYZING...' : 'AI DEBRIEF'}
-          </HUDButton>
-
-          <HUDButton
-            onClick={toggleStudyMode}
-            variant="primary"
-            icon={<BookOpen size={16} />}
-          >
-            STUDY MODE
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('HANDOVER')}
-            variant="primary"
-            icon={<Share2 size={16} />}
-          >
-            HANDOVER
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setShowTwelveLead(true)}
-            variant="primary"
-            icon={<Grid3X3 size={16} />}
-          >
-            12-LEAD
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setShowDiagnostics(true)}
-            variant="primary"
-            icon={<Microscope size={16} />}
-          >
-            DIAGS
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('POCUS')}
-            variant="primary"
-            icon={<Database size={16} />}
-          >
-            POCUS
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('CONSULT')}
-            variant="primary"
-            icon={<Phone size={16} />}
-          >
-            CONSULT
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('PROTOCOL_TABLET')}
-            variant="primary"
-            icon={<BookOpen size={16} />}
-          >
-            GUIDE
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('VITALS_TRENDS')}
-            variant="primary"
-            icon={<TrendingUp size={16} />}
-          >
-            TRENDS
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('EQUIPMENT')}
-            variant="primary"
-            icon={<Briefcase size={16} />}
-          >
-            BAG
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('HISTORY')}
-            variant="primary"
-            icon={<MessageCircle size={16} />}
-          >
-            HISTORY
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('PHYSICAL_EXAM')}
-            variant="primary"
-            icon={<Activity size={16} />}
-          >
-            EXAM
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('LEADERSHIP')}
-            variant="primary"
-            icon={<Shield size={16} />}
-          >
-            TEAM
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('MATERNAL_SUITE')}
-            variant="primary"
-            icon={<Baby size={16} />}
-          >
-            MATERNAL
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('TCCC_SUITE')}
-            variant="primary"
-            icon={<Crosshair size={16} />}
-          >
-            TCCC
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('TOXIDROME_LAB')}
-            variant="primary"
-            icon={<Microscope size={16} />}
-          >
-            TOX
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('FLIGHT_DECK')}
-            variant="primary"
-            icon={<Plane size={16} />}
-          >
-            FLIGHT
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('CARDIOLOGY_SUITE')}
-            variant="primary"
-            icon={<Heart size={16} />}
-          >
-            CARDIOLOGY
-          </HUDButton>
-
-          <HUDButton
-            onClick={() => setProcedure('CAREER')}
-            variant="success"
-            icon={<Trophy size={16} />}
-          >
-            CAREER
-          </HUDButton>
+        <div className="flex gap-3 items-center flex-wrap justify-end max-w-[70%] pointer-events-auto">
+          <HUDButton onClick={() => setProcedure('ANALYTICS')} variant="success" icon={<TrendingUp size={16} />}>REVIEW</HUDButton>
+          <HUDButton onClick={() => setProcedure('PCR_CHART')} variant="success" icon={<FileText size={16} />}>CHART</HUDButton>
+          <HUDButton onClick={showAIReview} isLoading={loadingAI} variant="success" icon={<MessageSquare size={16} />}>{loadingAI ? 'ANALYZING...' : 'AI DEBRIEF'}</HUDButton>
+          <HUDButton onClick={toggleStudyMode} variant="primary" icon={<BookOpen size={16} />}>STUDY MODE</HUDButton>
+          <HUDButton onClick={() => setProcedure('HANDOVER')} variant="primary" icon={<Share2 size={16} />}>HANDOVER</HUDButton>
+          <HUDButton onClick={() => setShowTwelveLead(true)} variant="primary" icon={<Grid3X3 size={16} />}>12-LEAD</HUDButton>
+          <HUDButton onClick={() => setShowDiagnostics(true)} variant="primary" icon={<Microscope size={16} />}>DIAGS</HUDButton>
+          <HUDButton onClick={() => setProcedure('POCUS')} variant="primary" icon={<Database size={16} />}>POCUS</HUDButton>
+          <HUDButton onClick={() => setProcedure('CONSULT')} variant="primary" icon={<Phone size={16} />}>CONSULT</HUDButton>
+          <HUDButton onClick={() => setProcedure('PROTOCOL_TABLET')} variant="primary" icon={<BookOpen size={16} />}>GUIDE</HUDButton>
+          <HUDButton onClick={() => setProcedure('VITALS_TRENDS')} variant="primary" icon={<TrendingUp size={16} />}>TRENDS</HUDButton>
+          <HUDButton onClick={() => setProcedure('EQUIPMENT')} variant="primary" icon={<Briefcase size={16} />}>BAG</HUDButton>
+          <HUDButton onClick={() => setProcedure('HISTORY')} variant="primary" icon={<MessageCircle size={16} />}>HISTORY</HUDButton>
+          <HUDButton onClick={() => setProcedure('PHYSICAL_EXAM')} variant="primary" icon={<Activity size={16} />}>EXAM</HUDButton>
+          <HUDButton onClick={() => setProcedure('LEADERSHIP')} variant="primary" icon={<Shield size={16} />}>TEAM</HUDButton>
+          <HUDButton onClick={() => setProcedure('RADIOLOGY')} variant="primary" icon={<Microscope size={16} />}>RADIOLOGY</HUDButton>
+          <HUDButton onClick={() => setProcedure('VASCULAR_ACCESS')} variant="primary" icon={<Zap size={16} />}>VASCULAR</HUDButton>
+          <HUDButton onClick={() => setProcedure('MATERNAL_SUITE')} variant="primary" icon={<Baby size={16} />}>MATERNAL</HUDButton>
+          <HUDButton onClick={() => setProcedure('TCCC_SUITE')} variant="primary" icon={<Crosshair size={16} />}>TCCC</HUDButton>
+          <HUDButton onClick={() => setProcedure('TOXIDROME_LAB')} variant="primary" icon={<Microscope size={16} />}>TOX</HUDButton>
+          <HUDButton onClick={() => setProcedure('FLIGHT_DECK')} variant="primary" icon={<Plane size={16} />}>FLIGHT</HUDButton>
+          <HUDButton onClick={() => setProcedure('CARDIOLOGY_SUITE')} variant="primary" icon={<Heart size={16} />}>CARDIOLOGY</HUDButton>
+          <HUDButton onClick={() => setProcedure('CBRNE_SUITE')} variant="primary" icon={<ShieldAlert size={16} />}>CBRNE</HUDButton>
+          <HUDButton onClick={() => setProcedure('BURN_SUITE')} variant="primary" icon={<Flame size={16} />}>BURN</HUDButton>
+          <HUDButton onClick={() => setProcedure('CAREER')} variant="success" icon={<Trophy size={16} />}>CAREER</HUDButton>
 
           <div className="bg-medical-dark/80 backdrop-blur-md px-6 py-2 rounded-xl border border-white/10 shadow-xl flex flex-col items-end min-w-[120px]">
             <div className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Elapsed Time</div>
@@ -643,6 +512,8 @@ const HUD = () => {
       {activeProcedure === 'TOXIDROME_LAB' && <ToxidromeLab onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'FLIGHT_DECK' && <FlightDeck onClose={() => setProcedure('NONE')} />}
       {activeProcedure === 'CARDIOLOGY_SUITE' && <CardiologySuite onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'CBRNE_SUITE' && <CBRNESuite onClose={() => setProcedure('NONE')} />}
+      {activeProcedure === 'BURN_SUITE' && <BurnSuite onClose={() => setProcedure('NONE')} />}
 
       <CPRQualityGauge />
 
