@@ -106,6 +106,19 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
       <PulsePoint position={[-0.15, 0.1, 1.15]} label="CAROTID PULSE" onAssess={() => onAssess('CAROTID_PULSE')} />
       <PulsePoint position={[0.7, -0.1, -0.1]} label="RADIAL PULSE" onAssess={() => onAssess('RADIAL_PULSE')} />
 
+      {/* Patient Monitor Cables / Leads */}
+      <group position={[-0.4, 0.3, 0.6]}>
+          <Cylinder args={[0.01, 0.01, 0.05]} position={[0, 0, 0]}>
+              <meshStandardMaterial color="#fff" />
+          </Cylinder>
+          <Cylinder args={[0.01, 0.01, 0.05]} position={[0.1, 0.05, 0]}>
+              <meshStandardMaterial color="#ef4444" />
+          </Cylinder>
+          <Cylinder args={[0.01, 0.01, 0.05]} position={[0.2, 0, 0]}>
+              <meshStandardMaterial color="#22c55e" />
+          </Cylinder>
+      </group>
+
       {/* Head & Airway Interaction Zone */}
       <group
         position={[0, 0.15, 1.1]}
@@ -330,34 +343,79 @@ export const MedicalRoom = ({
         </group>
       )}
 
-      {/* Hospital Bed - More High Fidelity */}
+      {/* High-Fidelity Hospital Bed */}
       <group position={[0, 0, -0.5]}>
-        <Box args={[1.6, 0.2, 4.0]} position={[0, 0.4, 0]} castShadow receiveShadow>
-            <meshStandardMaterial color="#f8fafc" />
+        {/* Mattress */}
+        <Box args={[1.6, 0.25, 4.0]} position={[0, 0.6, 0]} castShadow receiveShadow>
+            <meshStandardMaterial color="#f8fafc" roughness={0.8} />
         </Box>
-        <Box args={[1.7, 0.1, 4.2]} position={[0, 0.25, 0]} castShadow>
-            <meshStandardMaterial color="#64748b" metalness={1} roughness={0.2} />
+        {/* Bed Base / Frame */}
+        <Box args={[1.7, 0.15, 4.2]} position={[0, 0.45, 0]} castShadow>
+            <meshStandardMaterial color="#64748b" metalness={0.8} roughness={0.2} />
         </Box>
-        {/* Rails */}
-        <Box args={[0.05, 0.4, 3.0]} position={[0.8, 0.6, 0]}>
-             <meshStandardMaterial color="#94a3b8" metalness={1} />
+        {/* Under-frame Mechanics */}
+        <Box args={[1.2, 0.4, 3.0]} position={[0, 0.2, 0]}>
+            <meshStandardMaterial color="#334155" metalness={0.9} />
         </Box>
-        <Box args={[0.05, 0.4, 3.0]} position={[-0.8, 0.6, 0]}>
-             <meshStandardMaterial color="#94a3b8" metalness={1} />
+        {/* Casters / Wheels */}
+        {[[-0.7, 0.1, 1.8], [0.7, 0.1, 1.8], [-0.7, 0.1, -1.8], [0.7, 0.1, -1.8]].map((pos, i) => (
+            <group key={i} position={pos as [number, number, number]}>
+                <Cylinder args={[0.12, 0.12, 0.05]} rotation={[0, 0, Math.PI/2]}>
+                    <meshStandardMaterial color="#1e293b" />
+                </Cylinder>
+            </group>
+        ))}
+        {/* Side Rails (Articulated Look) */}
+        {[0.82, -0.82].map((x, i) => (
+            <group key={i} position={[x, 0.7, 0.2]}>
+                <Box args={[0.03, 0.4, 1.8]} radius={0.02}>
+                    <meshStandardMaterial color="#94a3b8" metalness={1} />
+                </Box>
+                <Box args={[0.03, 0.4, 1.0]} position={[0, 0, -1.5]} radius={0.02}>
+                    <meshStandardMaterial color="#94a3b8" metalness={1} />
+                </Box>
+            </group>
+        ))}
+        {/* Headboard */}
+        <Box args={[1.7, 0.6, 0.1]} position={[0, 0.8, 2.05]}>
+            <meshStandardMaterial color="#cbd5e1" roughness={0.5} />
+        </Box>
+        {/* Footboard */}
+        <Box args={[1.7, 0.4, 0.1]} position={[0, 0.7, -2.05]}>
+            <meshStandardMaterial color="#cbd5e1" roughness={0.5} />
         </Box>
       </group>
 
-      {/* Advanced Defibrillator Unit */}
+      {/* High-Fidelity Defibrillator Unit */}
       <group position={[-1.8, 0, -0.5]} onClick={() => onEquipmentClick('DEFIBRILLATOR')}>
-          <Box args={[0.6, 1.2, 0.6]} position={[0, 0.6, 0]} castShadow>
-              <meshStandardMaterial color="#f1f5f9" />
+          {/* Main Body */}
+          <Box args={[0.7, 1.3, 0.7]} position={[0, 0.65, 0]} castShadow>
+              <meshStandardMaterial color="#f8fafc" roughness={0.4} />
           </Box>
-          <Box args={[0.5, 0.4, 0.4]} position={[0, 1.4, 0]} castShadow>
-              <meshStandardMaterial color="#fbbf24" />
+          {/* Interface Head */}
+          <Box args={[0.6, 0.5, 0.5]} position={[0, 1.45, 0]} castShadow>
+              <meshStandardMaterial color="#fbbf24" roughness={0.2} />
           </Box>
-          {/* Screen */}
-          <Box args={[0.4, 0.25, 0.01]} position={[0, 1.4, 0.21]}>
-              <meshStandardMaterial color="#000" emissive="#4ade80" emissiveIntensity={0.2} />
+          {/* Screen Bezel */}
+          <Box args={[0.5, 0.35, 0.05]} position={[0, 1.45, 0.23]}>
+              <meshStandardMaterial color="#1e293b" />
+          </Box>
+          {/* Active Display */}
+          <Box args={[0.45, 0.3, 0.01]} position={[0, 1.45, 0.26]}>
+              <meshStandardMaterial color="#000" emissive="#4ade80" emissiveIntensity={0.6} />
+          </Box>
+          {/* Control Knobs */}
+          <group position={[0.2, 1.3, 0.26]}>
+              <Cylinder args={[0.04, 0.04, 0.05]} rotation={[Math.PI/2, 0, 0]}>
+                  <meshStandardMaterial color="#ef4444" />
+              </Cylinder>
+          </group>
+          {/* Paddles / Cables (Simplified) */}
+          <Box args={[0.15, 0.15, 0.1]} position={[-0.35, 1.45, 0.1]}>
+              <meshStandardMaterial color="#334155" />
+          </Box>
+          <Box args={[0.15, 0.15, 0.1]} position={[0.35, 1.45, 0.1]}>
+              <meshStandardMaterial color="#334155" />
           </Box>
       </group>
 
@@ -371,16 +429,31 @@ export const MedicalRoom = ({
           </Box>
       </group>
 
-      {/* Ventilator Cart */}
+      {/* High-Fidelity Ventilator Station */}
       <group position={[1.8, 0, -1.0]} onClick={() => onEquipmentClick('VENTILATOR')}>
-          <Box args={[0.6, 1.1, 0.6]} position={[0, 0.55, 0]} castShadow>
-              <meshStandardMaterial color="#e2e8f0" />
+          {/* Base / Pedestal */}
+          <Cylinder args={[0.35, 0.4, 0.2]} position={[0, 0.1, 0]}>
+              <meshStandardMaterial color="#1e293b" metalness={0.8} />
+          </Cylinder>
+          <Cylinder args={[0.05, 0.05, 1.2]} position={[0, 0.7, 0]}>
+              <meshStandardMaterial color="#94a3b8" metalness={1} />
+          </Cylinder>
+          {/* Main Unit Body */}
+          <Box args={[0.6, 0.6, 0.6]} position={[0, 1.4, 0]} castShadow>
+              <meshStandardMaterial color="#f1f5f9" />
           </Box>
-          <Box args={[0.5, 0.5, 0.3]} position={[0, 1.4, 0]} castShadow>
-              <meshStandardMaterial color="#334155" />
-          </Box>
-          <Box args={[0.4, 0.3, 0.01]} position={[0, 1.4, 0.16]}>
-              <meshStandardMaterial color="#000" emissive="#00e5ff" emissiveIntensity={0.5} />
+          {/* Tilted Screen Interface */}
+          <group position={[0, 1.6, 0.2]} rotation={[-Math.PI / 8, 0, 0]}>
+              <Box args={[0.5, 0.4, 0.05]}>
+                  <meshStandardMaterial color="#334155" />
+              </Box>
+              <Box args={[0.45, 0.35, 0.01]} position={[0, 0, 0.03]}>
+                  <meshStandardMaterial color="#000" emissive="#00e5ff" emissiveIntensity={0.8} />
+              </Box>
+          </group>
+          {/* Humidifier / Exhalation Block */}
+          <Box args={[0.3, 0.3, 0.2]} position={[0, 1.0, 0.2]}>
+              <meshStandardMaterial color="#cbd5e1" transparent opacity={0.6} />
           </Box>
       </group>
     </>
