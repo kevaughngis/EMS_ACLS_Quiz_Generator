@@ -1,95 +1,25 @@
-Navigating to app...
-Page loaded.
-Selected Protocol.
-Arrived on scene.
-Clicked sizeup: BSI / SCENE SAFETY
-Clicked sizeup: MOI / NOI DETERMINATION
-Clicked sizeup: NUMBER OF PATIENTS
-Clicked sizeup: ADDITIONAL RESOURCES (ALS)
-Patient contact established.
---- Processing REVIEW ---
-Opened REVIEW via JS click
-Captured verification/gallery/01_review.png
-Closed REVIEW with Return to Simulation
---- Processing CHART ---
-Opened CHART via JS click
-Captured verification/gallery/02_chart.png
-Closed CHART with Close
---- Processing STUDY MODE ---
-Opened STUDY MODE via JS click
-Captured verification/gallery/03_study_mode.png
-Closed STUDY MODE with Escape
---- Processing HANDOVER ---
-Opened HANDOVER via JS click
-Captured verification/gallery/04_handover.png
-Closed HANDOVER with Escape
---- Processing 12-LEAD ---
-Opened 12-LEAD via JS click
-Captured verification/gallery/05_12-lead.png
-Closed 12-LEAD with Close
---- Processing DIAGS ---
-Opened DIAGS via JS click
-Captured verification/gallery/06_diags.png
-Closed DIAGS with ✕
---- Processing POCUS ---
-Opened POCUS via JS click
-Captured verification/gallery/07_pocus.png
-Closed POCUS with Close
---- Processing CONSULT ---
-Opened CONSULT via JS click
-Captured verification/gallery/08_consult.png
-Closed CONSULT with Escape
---- Processing GUIDE ---
-Opened GUIDE via JS click
-Captured verification/gallery/09_guide.png
-Closed GUIDE with ✕
---- Processing TRENDS ---
-Opened TRENDS via JS click
-Captured verification/gallery/10_trends.png
-Closed TRENDS with ✕
---- Processing BAG ---
-Opened BAG via JS click
-Captured verification/gallery/11_bag.png
-Closed BAG with Close
---- Processing HISTORY ---
-Opened HISTORY via JS click
-Captured verification/gallery/12_history.png
-Closed HISTORY with ✕
---- Processing EXAM ---
-Opened EXAM via JS click
-Captured verification/gallery/13_exam.png
-Closed EXAM with ✕
---- Processing TEAM ---
-Opened TEAM via JS click
-Captured verification/gallery/14_team.png
-Closed TEAM with Close
---- Processing RADIOLOGY ---
-Opened RADIOLOGY via JS click
-Captured verification/gallery/15_radiology.png
-Closed RADIOLOGY with Return to Simulation
---- Processing VASCULAR ---
-Opened VASCULAR via JS click
-Captured verification/gallery/16_vascular.png
-Closed VASCULAR with ✕
---- Processing MATERNAL ---
-Opened MATERNAL via JS click
-Captured verification/gallery/17_maternal.png
-Closed MATERNAL with Return to Mission
---- Processing TCCC ---
-Opened TCCC via JS click
-Captured verification/gallery/18_tccc.png
-Closed TCCC with Back to Zone
---- Processing TOX ---
-Opened TOX via JS click
-Captured verification/gallery/19_tox.png
-Closed TOX with Escape
---- Processing FLIGHT ---
-Could not find button with text FLIGHT
---- Processing CARDIOLOGY ---
-Could not find button with text CARDIOLOGY
---- Processing CBRNE ---
-Could not find button with text CBRNE
---- Processing BURN ---
-Could not find button with text BURN
---- Processing CAREER ---
-Could not find button with text CAREER
+node:events:486
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: write EPIPE
+    at afterWriteDispatched (node:internal/stream_base_commons:159:15)
+    at writeGeneric (node:internal/stream_base_commons:150:3)
+    at Socket._writeGeneric (node:net:966:11)
+    at Socket._write (node:net:978:8)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at PipeTransport.send (/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/playwright/driver/package/lib/server/utils/pipeTransport.js:52:21)
+    at dispatcherConnection.onmessage (/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/playwright/driver/package/lib/cli/driver.js:60:59)
+    at DispatcherConnection.sendEvent (/home/jules/.pyenv/versions/3.12.13/lib/python3.12/site-packages/playwright/driver/package/lib/server/dispatchers/dispatcher.js:176:10)
+Emitted 'error' event on Socket instance at:
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  errno: -32,
+  code: 'EPIPE',
+  syscall: 'write'
+}
+
+Node.js v24.13.0
