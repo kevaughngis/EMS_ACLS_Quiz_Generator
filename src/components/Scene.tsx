@@ -9,7 +9,7 @@ interface PatientModelProps {
 }
 
 export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
-  const { patientState, activePatientIndex, secondaryPatientState, scenario } = useStore();
+  const { patientState, activePatientIndex, secondaryPatientState, scenario, floatingEvents } = useStore();
   const [hovered, setHovered] = useState<string | null>(null);
   const chestRef = useRef<THREE.Group>(null);
 
@@ -44,6 +44,28 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
 
   return (
     <group position={[0, 0.4, 0]}>
+      {/* Eyes - Dynamic blinking and state-based dilation */}
+      <group position={[0, 0.15, 1.1]}>
+         {/* L Eye */}
+         <mesh position={[-0.08, 0.05, 0.18]}>
+            <sphereGeometry args={[0.02, 16, 16]} />
+            <meshStandardMaterial color="white" />
+            <mesh position={[0, 0, 0.015]}>
+                <sphereGeometry args={[0.01, 8, 8]} />
+                <meshStandardMaterial color="#3e2723" />
+            </mesh>
+         </mesh>
+         {/* R Eye */}
+         <mesh position={[0.08, 0.05, 0.18]}>
+            <sphereGeometry args={[0.02, 16, 16]} />
+            <meshStandardMaterial color="white" />
+            <mesh position={[0, 0, 0.015]}>
+                <sphereGeometry args={[0.01, 8, 8]} />
+                <meshStandardMaterial color="#3e2723" />
+            </mesh>
+         </mesh>
+      </group>
+
       {/* Torso & Chest Interaction Zone */}
       <group ref={chestRef}>
         <mesh
@@ -80,6 +102,10 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
         </mesh>
       </group>
 
+      {/* Pulse Points */}
+      <PulsePoint position={[-0.15, 0.1, 1.15]} label="CAROTID PULSE" onAssess={() => onAssess('CAROTID_PULSE')} />
+      <PulsePoint position={[0.7, -0.1, -0.1]} label="RADIAL PULSE" onAssess={() => onAssess('RADIAL_PULSE')} />
+
       {/* Head & Airway Interaction Zone */}
       <group
         position={[0, 0.15, 1.1]}
@@ -112,6 +138,12 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
          </mesh>
       </group>
 
+      {/* Pelvis & Detailed Gown */}
+      <mesh position={[0, -0.1, -0.6]} castShadow>
+          <boxGeometry args={[0.9, 0.4, 0.5]} />
+          <meshStandardMaterial {...gownMat} />
+      </mesh>
+
       {/* Legs */}
       <group position={[-0.3, -0.05, -1.5]}>
          <mesh castShadow>
@@ -134,8 +166,68 @@ export const PatientModel: React.FC<PatientModelProps> = ({ onAssess }) => {
           </div>
         </Html>
       )}
+
+      {/* Floating Events */}
+      {floatingEvents.map(event => (
+        <FloatingEvent key={event.id} text={event.text} />
+      ))}
     </group>
   );
+};
+
+const FloatingEvent = ({ text }: { text: string }) => {
+  const ref = useRef<THREE.Group>(null);
+
+  useFrame((state) => {
+    if (ref.current) {
+        ref.current.position.y += 0.01;
+        ref.current.position.z += Math.sin(state.clock.elapsedTime * 5) * 0.002;
+    }
+  });
+
+  return (
+    <group ref={ref} position={[0, 1.2, 0]}>
+        <Html center>
+            <motion.div
+                initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 1.2 }}
+                className="bg-medical-cyan/20 border border-medical-cyan/50 px-4 py-2 rounded-xl backdrop-blur-md text-white font-black text-xs whitespace-nowrap uppercase italic tracking-tighter"
+            >
+                {text}
+            </motion.div>
+        </Html>
+    </group>
+  );
+};
+
+const PulsePoint = ({ position, label, onAssess }: any) => {
+    const [hovered, setHovered] = useState(false);
+
+    return (
+        <mesh
+            position={position}
+            onPointerOver={() => setHovered(true)}
+            onPointerOut={() => setHovered(false)}
+            onClick={(e) => { e.stopPropagation(); onAssess(); }}
+        >
+            <sphereGeometry args={[0.04, 8, 8]} />
+            <meshStandardMaterial
+                color={hovered ? "#ff3d00" : "#ffffff"}
+                transparent
+                opacity={hovered ? 0.8 : 0.2}
+                emissive={hovered ? "#ff3d00" : "#000000"}
+                emissiveIntensity={2}
+            />
+            {hovered && (
+                <Html center position={[0, 0.1, 0]}>
+                    <div className="bg-medical-red text-white px-2 py-0.5 rounded text-[8px] font-black whitespace-nowrap uppercase tracking-widest shadow-lg">
+                        {label}
+                    </div>
+                </Html>
+            )}
+        </mesh>
+    );
 };
 
 const TeamMemberModel = ({ position, name, role, color, onClick }: any) => {
@@ -177,19 +269,34 @@ export const MedicalRoom = ({
     onEquipmentClick: (type: string) => void,
     onTeamClick: (memberId: string) => void
 }) => {
-  const { environment, team } = useStore();
+  const { environment, team, theme } = useStore();
+
+  const getLightColor = () => {
+    if (theme === 'TACTICAL') return "#22c55e";
+    if (theme === 'EMERGENCY') return "#ef4444";
+    return environment === 'ER' ? "#ff3d00" : "#0ea5e9";
+  };
 
   return (
     <>
-      <ambientLight intensity={environment === 'AMBULANCE' ? 0.2 : 0.3} />
-      <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow shadow-mapSize={[2048, 2048]} />
-      <pointLight position={[-3, 2, -2]} color={environment === 'ER' ? "#ff3d00" : "#0ea5e9"} intensity={2} />
+      <ambientLight intensity={theme === 'TACTICAL' ? 0.05 : environment === 'AMBULANCE' ? 0.2 : 0.3} />
+      <directionalLight position={[5, 10, 5]} intensity={theme === 'TACTICAL' ? 0.5 : 1.5} castShadow shadow-mapSize={[2048, 2048]} />
+      <pointLight position={[-3, 2, -2]} color={getLightColor()} intensity={theme === 'TACTICAL' ? 5 : 2} />
 
       <group position={[0, -0.01, 0]}>
         <Plane args={[100, 100]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <meshStandardMaterial color={environment === 'AMBULANCE' ? "#1e1b4b" : "#020617"} roughness={0.1} metalness={0.8} />
+          <meshStandardMaterial
+            color={theme === 'TACTICAL' ? '#064e3b' : environment === 'AMBULANCE' ? "#1e1b4b" : "#020617"}
+            roughness={0.1}
+            metalness={0.8}
+          />
         </Plane>
-        <Grid infiniteGrid fadeDistance={40} cellColor="#1e293b" sectionColor={environment === 'ER' ? "#dc2626" : "#334155"} />
+        <Grid
+            infiniteGrid
+            fadeDistance={40}
+            cellColor={theme === 'TACTICAL' ? '#065f46' : "#1e293b"}
+            sectionColor={theme === 'TACTICAL' ? '#10b981' : theme === 'EMERGENCY' ? '#b91c1c' : environment === 'ER' ? "#dc2626" : "#334155"}
+        />
       </group>
 
       {/* Team Members */}

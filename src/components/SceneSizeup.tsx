@@ -4,8 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Radio, ShieldAlert, MapPin, ClipboardList, CheckCircle2, UserCheck } from 'lucide-react';
 
 export const SceneSizeup: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const { scenario } = useStore();
+  const { scenario, speak } = useStore();
   const [phase, setPhase] = useState<'DISPATCH' | 'SIZEUP'>('DISPATCH');
+
+  useEffect(() => {
+    if (phase === 'DISPATCH' && scenario) {
+        speak(`Unit 12, respond to ${scenario.title}. Reports of an unresponsive patient.`, 'SYSTEM');
+    }
+  }, [phase, scenario, speak]);
   const [checks, setChecks] = useState<string[]>([]);
 
   const sizeupSteps = [
@@ -16,8 +22,13 @@ export const SceneSizeup: React.FC<{ onComplete: () => void }> = ({ onComplete }
   ];
 
   const toggleCheck = (id: string) => {
-    if (checks.includes(id)) setChecks(prev => prev.filter(c => c !== id));
-    else setChecks(prev => [...prev, id]);
+    const step = sizeupSteps.find(s => s.id === id);
+    if (checks.includes(id)) {
+        setChecks(prev => prev.filter(c => c !== id));
+    } else {
+        setChecks(prev => [...prev, id]);
+        if (step) speak(`${step.label} checked and secure.`);
+    }
   };
 
   return (

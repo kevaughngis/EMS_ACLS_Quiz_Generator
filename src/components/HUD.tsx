@@ -58,7 +58,7 @@ const HUD = () => {
   const {
     patientState, secondaryPatientState, activePatientIndex, setActivePatient, triagePatient,
     logs, applyAction, tick, scenario, studyMode, toggleStudyMode, hints, addHint, isSimulating, activeProcedure, setProcedure,
-    activeCrisis, setStore
+    activeCrisis, setStore, theme
   } = useStore();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
@@ -226,8 +226,18 @@ const HUD = () => {
     </div>
   );
 
+  const themeStyles = {
+    CLINICAL: "text-white font-sans selection:bg-medical-cyan/30",
+    TACTICAL: "text-green-500 font-mono selection:bg-green-500/30 uppercase",
+    EMERGENCY: "text-white font-serif selection:bg-red-500/30",
+  };
+
   return (
-    <div className="relative h-screen w-screen overflow-hidden text-white font-sans selection:bg-medical-cyan/30">
+    <div className={cn(
+        "relative h-screen w-screen overflow-hidden transition-colors duration-1000",
+        themeStyles[theme],
+        theme === 'TACTICAL' ? 'bg-black' : 'bg-medical-dark'
+    )}>
       <SimulationView onAssess={handleAssess} />
 
       <AnimatePresence>
@@ -279,7 +289,11 @@ const HUD = () => {
       {activeProcedure === 'HANDOVER' && <HandoverReport />}
 
       {/* CRT Overlay Effect - Simplified but effective */}
-      <div className="pointer-events-none absolute inset-0 z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%]"></div>
+      <div className={cn(
+          "pointer-events-none absolute inset-0 z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%]",
+          theme === 'TACTICAL' && "opacity-60",
+          theme === 'EMERGENCY' && "opacity-20"
+      )}></div>
 
       {/* Top HUD - Scenario Info */}
       <motion.div
@@ -322,6 +336,12 @@ const HUD = () => {
           <HUDButton onClick={() => setProcedure('CBRNE_SUITE')} variant="primary" icon={<ShieldAlert size={16} />}>CBRNE</HUDButton>
           <HUDButton onClick={() => setProcedure('BURN_SUITE')} variant="primary" icon={<Flame size={16} />}>BURN</HUDButton>
           <HUDButton onClick={() => setProcedure('CAREER')} variant="success" icon={<Trophy size={16} />}>CAREER</HUDButton>
+
+          <div className="flex gap-1 border-l border-white/10 pl-3 ml-3">
+             <ThemeBtn active={theme === 'CLINICAL'} onClick={() => setStore({ theme: 'CLINICAL' })} color="bg-medical-cyan" />
+             <ThemeBtn active={theme === 'TACTICAL'} onClick={() => setStore({ theme: 'TACTICAL' })} color="bg-green-500" />
+             <ThemeBtn active={theme === 'EMERGENCY'} onClick={() => setStore({ theme: 'EMERGENCY' })} color="bg-medical-red" />
+          </div>
 
           <div className="bg-medical-dark/80 backdrop-blur-md px-6 py-2 rounded-xl border border-white/10 shadow-xl flex flex-col items-end min-w-[120px]">
             <div className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Elapsed Time</div>
@@ -639,6 +659,17 @@ const PatientTab = ({ active, onClick, label, onTriage }: any) => (
 
 const TriageBtn = ({ color, onClick }: any) => (
     <button onClick={onClick} className={cn("w-3 h-3 rounded-full border border-white/20 hover:scale-125 transition-transform", color)} />
+);
+
+const ThemeBtn = ({ active, onClick, color }: any) => (
+    <button
+        onClick={onClick}
+        className={cn(
+            "w-4 h-4 rounded-full border border-white/20 transition-all",
+            color,
+            active ? "scale-125 shadow-[0_0_10px_currentColor]" : "opacity-40 hover:opacity-100"
+        )}
+    />
 );
 
 const Instruction = ({ hint, action }: any) => (

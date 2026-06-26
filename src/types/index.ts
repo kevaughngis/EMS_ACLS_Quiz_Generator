@@ -36,7 +36,11 @@ export type RhythmType =
   | 'HYPERKALEMIA'
   | 'IDIOVENTRICULAR'
   | 'WANDERING_PACEMAKER'
-  | 'MAT';
+  | 'MAT'
+  | 'PPH'
+  | 'ECLAMPSIA'
+  | 'WELLENS'
+  | 'DE_WINTER';
 
 export interface LeadMorphology {
   lead: string;
@@ -51,7 +55,7 @@ export interface PatientState {
   twelveLead?: LeadMorphology[];
   consciousness: 'AWAKE' | 'ALTERED' | 'UNCONSCIOUS';
   airway: 'CLEAR' | 'OBSTRUCTED' | 'INTUBATED';
-  breathing: 'NORMAL' | 'LABORED' | 'APNEIC';
+  breathing: 'NORMAL' | 'LABORED' | 'APNEIC' | 'PNEUMOTHORAX';
   circulation: 'PULSE' | 'PULSELESS';
   physicalExam: {
     pupils: 'PERRL' | 'FIXED_DILATED' | 'PINPOINT';
